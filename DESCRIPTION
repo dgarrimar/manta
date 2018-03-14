@@ -5,8 +5,8 @@ Version: 0.1.0
 Date: 2018-03-05
 Author: Diego Garrido-Martín, Ferran Reverter, Miquel Calvo, Roderic Guigo.
 Maintainer: Diego Garrido-Martín <diego.garrido@crg.eu>
-Description: Performs non-parametric, multivariate regression with analytic asymptotic p-values 
-License: GPL-3
+Description: Performs non-parametric, multivariate regression with analytic asymptotic p-values.
+License: GPL-3 | file LICENSE
 Encoding: UTF-8
 Depends:
     R (>= 3.0.0)
@@ -15,3 +15,4 @@ Imports:
     CompQuadForm
 URL: http://github.com/dgarrimar/mlm
 BugReports: http://github.com/dgarrimar/mlm/issues
+RoxygenNote: 6.0.1
