@@ -100,9 +100,9 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
   }
   
   ## Update formula
-  if (!missing(data)) 
+  if (!missing(data))
     formula <- terms(formula, data = data)
-    formula <- update(formula, Y ~ .)
+  formula <- update(formula, Y ~ .)
     ## no data? find variables in .GlobalEnv
   
   ## Fit lm 
