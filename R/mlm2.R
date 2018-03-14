@@ -99,12 +99,14 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
     contr.list <- contrasts
   }
   
-  ## Build new formula
-  fmla <- paste(formula)
-  fmla <- stats::as.formula(paste('Y ~', fmla[3]))
+  ## Update formula
+  if (!missing(data)) 
+    formula <- terms(formula, data = data)
+    formula <- update(formula, Y ~ .)
+    ## no data? find variables in .GlobalEnv
   
   ## Fit lm 
-  fit <- lm(fmla, data = X, contrasts = contr.list, ...)
+  fit <- lm(formula, data = X, contrasts = contr.list, ...)
 
   ## Update object call and class
   fit$call <- cl
