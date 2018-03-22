@@ -3,21 +3,24 @@
 ##' Transforms the response variables and fits a multivariate
 ##' linear model using \code{\link{lm}}. 
 ##' 
-##' A "\code{Y}" matrix is obtained after transforming and centering the 
-##' original response variables. Then, the multivariate fit obtained by 
-##' \code{\link{lm}} can be used to obtain sums of squares (I, II, III), 
-##' pseudo F statistics and asymptotic p-values for the explanatory variables in
-##' a non-parametric manner.
+##' A "\code{Y}" matrix is obtained after projecting into euclidean space 
+##' (as in multidimensional scaling) and centering the original response 
+##' variables. Then, the multivariate fit obtained by \code{\link{lm}} can be 
+##' used to obtain sums of squares (I, II, III), pseudo F statistics and 
+##' asymptotic p-values for the explanatory variables in a non-parametric manner.
 ##' 
 ##' @param formula object of class "\code{\link{formula}}": a symbolic 
-##' description of the model to be fitted.
+##' description of the model to be fitted. The LHS can be either a 
+##' \code{\link{matrix}} or a \code{\link{data.frame}} with the response 
+##' variables, a distance matrix or a distance object of class \code{\link{dist}}.
+##' Note the distance should be euclidean.
 ##' @param data an optional data frame, list or environment (or object 
 ##' coercible by \code{\link{as.data.frame}} to a data frame) containing the 
 ##' variables in the model. If not found in data, the variables are taken from 
 ##' \code{environment(formula)}, typically the environment from which \code{mlm}
 ##' is called.
-##' @param distance data transformation. One of c("\code{euclidean}", "\code{hellinger}"). 
-##' Default is "\code{euclidean}".
+##' @param distance data transformation if the formula LHS is not a distance matrix. 
+##' One of c("\code{euclidean}", "\code{hellinger}"). Default is "\code{euclidean}".
 ##' @param contrasts an optional list. See the \code{contrasts.arg} of 
 ##' \code{\link{model.matrix.default}}. Default is "\code{\link{contr.sum}}" 
 ##' for ordered factors and "\code{\link{contr.poly}}" for unordered factors. 
@@ -49,35 +52,77 @@
 ##' @export
 mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
   
-  ## Define model frame, response and explanatory variables 
+  # Save call and get response and explanatory variables
   cl <- match.call()
-  mf <- match.call(expand.dots = FALSE)
-  m <- match(c("formula", "data"), names(mf), 0L)
-  mf <- mf[c(1L, m)]
-  mf$drop.unused.levels <- TRUE
-  mf$na.action <- "na.pass"
-  mf[[1L]] <- quote(stats::model.frame) # need stats:: for non-standard evaluation
-  mf <- eval(mf, parent.frame())
+  response <- eval(formula[[2]], environment(formula), globalenv())
+  environment(formula) <- environment()
+  X <- model.frame(formula[-2], data = data, na.action = "na.pass")
+  attributes(X)$terms <- NULL
 
-  Y <- model.response(mf, "numeric")         # Response variables - will be transformed
-  X <- mf[, colnames(mf)[-1], drop = FALSE]  # Explanatory variables - no change
-  
   ## Checks
    # > 1 response variable
    # arguments
    # response = factor
-   # [...]
-  distance <- match.arg(distance, c("euclidean", "hellinger"))
   
-  ## Transformation (distance)
-  if(distance == "hellinger"){
-    Y <- sqrt(Y)
+  # Checks on the response variable
+  distance <- match.arg(distance, c("euclidean", "hellinger"))
+  tol <- 1e-10
+  
+  if (inherits(response, "dist") ||
+      ((is.matrix(response) || is.data.frame(response)) &&
+      isSymmetric(unname(as.matrix(response))))) {
+    
+    dmat <- as.matrix(response)
+    if(any(is.na(dmat)) || any(is.na(X))){
+      dmat[lower.tri(dmat)] <- 0
+      which.na <- unique(c(which(!complete.cases(dmat)), which(!complete.cases(X))))
+      dmat <- dmat[-which.na, -which.na]
+      dmat <- t(dmat) + dmat
+    }
+    if (any(dmat < -tol)){
+      stop("dissimilarities must be non-negative")
+    }
+      
+  } else {
+    which.na <- unique(c(which(!complete.cases(response)), which(!complete.cases(X))))
+    if(length(which.na) > 0){
+      response <- response[-which.na, ]
+    }
+    dmat <- as.matrix(mlmdist(response, method = distance)) 
   }
   
-  ## Center response variables
+  ## Get new Y, projected into euclidean space
+  # n <- nrow(dmat)
+  # A <- -0.5 * dmat^2
+  # As <- A - rep(colMeans(A), rep.int(n, n))
+  # G <- t(As) - rep(rowMeans(As), rep.int(n, n))
+  G <- .Call(stats:::C_DoubleCentre, -0.5*dmat^2)
+  e <- eigen(G, symmetric = TRUE) # rARPACK can help when big matrices
+  lambda <- e$values
+  v <- e$vectors
+  lambda <- lambda[abs(lambda)/max(abs(lambda)) > tol] 
+  if(any(lambda < 0)){
+    stop("all eigenvalues of G should be > 0")
+  }
+  l <- length(lambda)
+  if(l <= 1){
+    stop("number of eigenvalues of G should be > 1")
+  }
+  lambda <- diag(l) * sqrt(lambda)
+  Y <- v[, 1:l] %*% lambda
+  
+  ## Center response variables 
   Y <- scale(Y, center = TRUE, scale = FALSE)
-
-  ## Define contrasts
+  
+  ## Reconstruct NA's in Y for `$` rhs (maybe there is a better way to do this...)
+  if(length(which.na) > 0){
+    ris <- integer(nrow(Y) + length(which.na))
+    ris[which.na] <- nrow(Y) + 1L
+    ris[-which.na] <- seq_len(nrow(Y))
+    Y <- rbind(Y, rep(NA, ncol(Y)))[ris, ]
+  }
+  
+  # Define contrasts
   if(is.null(contrasts)){
     contrasts <- list(unordered = "contr.sum", ordered = "contr.poly")
     contr.list <- lapply(1:ncol(X), FUN = function(k){
@@ -98,26 +143,51 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
   } else {
     contr.list <- contrasts
   }
-  
-  ## Update formula
-  if (!missing(data))
+
+  ## Update formula and data
+  if (!missing(data)) # expand and check terms
     formula <- terms(formula, data = data)
   formula <- update(formula, Y ~ .)
-    ## no data? find variables in .GlobalEnv
+  ## no data? find variables in .GlobalEnv
+  if (missing(data))
+    data <- model.frame(delete.response(terms(formula)))
   
   ## Fit lm 
-  fit <- lm(formula, data = X, contrasts = contr.list, ...)
+  fit <- lm(formula, data = data, contrasts = contr.list, ...)
 
   ## Update object call and class
   fit$call <- cl
-  fit$transformation <- 
-    attributes(fit$model)$transformation <- 
-    c(sprintf('distance:%s', distance), 'scaled:center')
   class(fit) <- c('mlm2', class(fit))
   
   return(fit)
 }
 
+##' Distance matrix computation for Euclidean family distances
+##' 
+##' This function computes and returns the distance matrix computed by using 
+##' the specified distance measure to compute the distances between the rows 
+##' of a data matrix.
+##' 
+##' Available distance measures are (written for two vectors x and y):
+##' \code{euclidean}:
+##  Usual distance between the two vectors (2 norm aka L_2), sqrt(sum((x_i - y_i)^2)).
+##' 
+##' \code{hellinger}:
+##  Distance between the square root of two vectors, sqrt(sum((sqrt(x_i) - sqrt(y_i))^2)).
+##' 
+##' @param d distance matrix
+##' @param distance distance to be applied. One of c("euclidean", "hellinger")
+##' @param tol eigenvalues with absolute value <= tol are considered 0. 
+##' 
+##' @export
+mlmdist <- function(X, method = "euclidean"){
+  if(method == "euclidean"){
+    dmat <- dist(X, method = "euclidean")
+  } else if(method == "hellinger"){
+    dmat <- dist(sqrt(X), method = "euclidean")
+  }
+  return(dmat)
+}
 
 ##' @author Diego Garrido-Martín
 ##' @keywords internal

@@ -8,7 +8,9 @@ mlm2(formula, data, distance = "euclidean", contrasts = NULL, ...)
 }
 \arguments{
 \item{formula}{object of class "\code{\link{formula}}": a symbolic 
-description of the model to be fitted.}
+description of the model to be fitted. The LHS can be either a 
+\code{\link{matrix}} or a \code{\link{data.frame}} with the response 
+variables, a distance matrix or a distance object of class \code{\link{dist}}.}
 
 \item{data}{an optional data frame, list or environment (or object 
 coercible by \code{\link{as.data.frame}} to a data frame) containing the 
@@ -16,8 +18,8 @@ variables in the model. If not found in data, the variables are taken from
 \code{environment(formula)}, typically the environment from which \code{mlm}
 is called.}
 
-\item{distance}{data transformation. One of c("\code{euclidean}", "\code{hellinger}"). 
-Default is "\code{euclidean}".}
+\item{distance}{data transformation. One of c("\code{euclidean}", 
+"\code{hellinger}"). Default is "\code{euclidean}".}
 
 \item{contrasts}{an optional list. See the \code{contrasts.arg} of 
 \code{\link{model.matrix.default}}. Default is "\code{\link{contr.sum}}" 
@@ -50,11 +52,11 @@ Transforms the response variables and fits a multivariate
 linear model using \code{\link{lm}}.
 }
 \details{
-A "\code{Y}" matrix is obtained after transforming and centering the 
-original response variables. Then, the multivariate fit obtained by 
-\code{\link{lm}} can be used to obtain sums of squares (I, II, III), 
-pseudo F statistics and asymptotic p-values for the explanatory variables in
-a non-parametric manner.
+A "\code{Y}" matrix is obtained after projecting into euclidean space 
+(as in multidimensional scaling) and centering the original response 
+variables. Then, the multivariate fit obtained by \code{\link{lm}} can be 
+used to obtain sums of squares (I, II, III), pseudo F statistics and 
+asymptotic p-values for the explanatory variables in a non-parametric manner.
 }
 \seealso{
 \code{\link{summary.mlm2}}
