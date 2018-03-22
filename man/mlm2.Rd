@@ -10,7 +10,8 @@ mlm2(formula, data, distance = "euclidean", contrasts = NULL, ...)
 \item{formula}{object of class "\code{\link{formula}}": a symbolic 
 description of the model to be fitted. The LHS can be either a 
 \code{\link{matrix}} or a \code{\link{data.frame}} with the response 
-variables, a distance matrix or a distance object of class \code{\link{dist}}.}
+variables, a distance matrix or a distance object of class \code{\link{dist}}.
+Note the distance should be euclidean.}
 
 \item{data}{an optional data frame, list or environment (or object 
 coercible by \code{\link{as.data.frame}} to a data frame) containing the 
@@ -18,8 +19,8 @@ variables in the model. If not found in data, the variables are taken from
 \code{environment(formula)}, typically the environment from which \code{mlm}
 is called.}
 
-\item{distance}{data transformation. One of c("\code{euclidean}", 
-"\code{hellinger}"). Default is "\code{euclidean}".}
+\item{distance}{data transformation if the formula LHS is not a distance matrix. 
+One of c("\code{euclidean}", "\code{hellinger}"). Default is "\code{euclidean}".}
 
 \item{contrasts}{an optional list. See the \code{contrasts.arg} of 
 \code{\link{model.matrix.default}}. Default is "\code{\link{contr.sum}}" 

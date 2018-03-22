@@ -96,7 +96,7 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
   # A <- -0.5 * dmat^2
   # As <- A - rep(colMeans(A), rep.int(n, n))
   # G <- t(As) - rep(rowMeans(As), rep.int(n, n))
-  G <- .Call(stats:::C_DoubleCentre, -0.5*dmat^2)
+  G <- .Call(C_DoubleCentre, -0.5*dmat^2)
   e <- eigen(G, symmetric = TRUE) # rARPACK can help when big matrices
   lambda <- e$values
   v <- e$vectors
