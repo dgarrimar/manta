@@ -10,9 +10,12 @@ biomarkers <- cbind(rnorm(n)*sqrt(2),
 colnames(biomarkers) <- paste0("biomarker", 1:ncol(biomarkers))
 
 ## Generate explanatory variables
-patients <- data.frame("age" = runif(100)*10,
+age <- round(jitter(apply(biomarkers, 1, mean), 1.3e3))* 5 +18
+status <- cut(jitter(age, 1), breaks = 3)
+levels(status) <- c("healthy", "mild", "severe")
+patients <- data.frame("age" = age,
                        "gender" = sample(c("male", "female"), size = 100, replace = TRUE),
-                       "status" = sample(c("healthy", "mild", "severe"), size = 100, replace = TRUE))
+                       "status" = status)
 patients$status <- as.ordered(patients$status)
 
 ## Introduce NA's randomly in both datasets
