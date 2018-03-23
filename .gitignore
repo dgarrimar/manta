@@ -2,5 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+ci/fit.rda
 data-raw
 TODO
