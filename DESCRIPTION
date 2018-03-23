@@ -1,7 +1,7 @@
 Package: mlm
 Type: Package
 Title: Multivariate linear models
-Version: 0.2.2
+Version: 0.2.3
 Date: 2018-03-05
 Author: Diego Garrido-Martín, Ferran Reverter, Miquel Calvo, Roderic Guigo.
 Maintainer: Diego Garrido-Martín <diego.garrido@crg.eu>
@@ -15,6 +15,7 @@ Imports:
     CompQuadForm
 Suggests:
     testthat
+LazyData: true
 URL: http://github.com/dgarrimar/mlm
 BugReports: http://github.com/dgarrimar/mlm/issues
 RoxygenNote: 6.0.1
