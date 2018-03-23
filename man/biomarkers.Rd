@@ -15,6 +15,7 @@ biomarkers
 }
 \description{
 A simulated dataset containing the levels of 5 biomarkers, 
-measured in 100 individuals. Missing observations appear as \code{NA}.
+measured in 100 individuals, with different scales. 
+Missing observations appear as \code{NA}.
 }
 \keyword{datasets}

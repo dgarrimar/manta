@@ -93,11 +93,9 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
   }
   
   ## Get new Y, projected into euclidean space
-  # n <- nrow(dmat)
-  # A <- -0.5 * dmat^2
-  # As <- A - rep(colMeans(A), rep.int(n, n))
-  # G <- t(As) - rep(rowMeans(As), rep.int(n, n))
+  ### Compute G
   G <- C_DoubleCentre(-0.5*dmat^2)
+  ### Compute eigenvalues of G
   e <- eigen(G, symmetric = TRUE) # rARPACK can help when big matrices
   lambda <- e$values
   v <- e$vectors
@@ -524,7 +522,8 @@ C_DoubleCentre <- function(x) .Call(dblcen, x)
 #' Biomarkers
 #'
 #' A simulated dataset containing the levels of 5 biomarkers, 
-#' measured in 100 individuals. Missing observations appear as \code{NA}.
+#' measured in 100 individuals, with different scales. 
+#' Missing observations appear as \code{NA}.
 #'
 #' @format A matrix with 100 rows and 5 numerical variables:
 #' \describe{
