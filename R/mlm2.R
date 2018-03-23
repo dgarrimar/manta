@@ -49,6 +49,7 @@
 ##' 
 ##' @author Diego Garrido-Martín
 ##' @import stats
+##' @import rARPACK
 ##' @export
 mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
   
@@ -82,13 +83,14 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
     if (any(dmat < -tol)){
       stop("dissimilarities must be non-negative")
     }
-      
+    k <- NULL  
   } else {
     which.na <- unique(c(which(!complete.cases(response)), which(!complete.cases(X))))
     if(length(which.na) > 0){
       response <- response[-which.na, ]
     }
-    dmat <- as.matrix(mlmdist(response, method = distance)) 
+    dmat <- as.matrix(mlmdist(response, method = distance))
+    k <- ncol(response)
   }
   
   ## Get new Y, projected into euclidean space
