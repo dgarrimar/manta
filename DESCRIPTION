@@ -13,7 +13,8 @@ Depends:
 Imports:
     car,
     CompQuadForm
-URL: NA
-BugReports: NA
-RoxygenNote: NA
-Suggests: testthat
+Suggests:
+    testthat
+URL: http://github.com/dgarrimar/mlm
+BugReports: http://github.com/dgarrimar/mlm/issues
+RoxygenNote: 6.0.1
