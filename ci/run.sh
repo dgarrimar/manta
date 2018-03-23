@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # pre-computed checksum
-MD5SUM="8d7ecdf761f2241346a7859251f7877f"
+MD5SUM="85ec4dd714957756413a834a7a3842f6"
 
 # run mlm2 on sample dataset
 # R CMD INSTALL --preclean --no-multiarch --with-keep.source ../mlm

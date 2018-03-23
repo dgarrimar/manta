@@ -2,7 +2,7 @@ sudo: false
 language: r
 cache: packages
 r:
-- 3.3.2
+- 3.4.1
 
 script:
 - bash ci/run.sh
