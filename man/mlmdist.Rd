@@ -7,11 +7,9 @@
 mlmdist(X, method = "euclidean")
 }
 \arguments{
-\item{d}{distance matrix}
+\item{X}{distance matrix}
 
-\item{distance}{distance to be applied. One of c("euclidean", "hellinger")}
-
-\item{tol}{eigenvalues with absolute value <= tol are considered 0.}
+\item{method}{distance to be applied. One of c("euclidean", "hellinger")}
 }
 \description{
 This function computes and returns the distance matrix computed by using 

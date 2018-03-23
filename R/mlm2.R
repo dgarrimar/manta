@@ -96,7 +96,7 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
   # A <- -0.5 * dmat^2
   # As <- A - rep(colMeans(A), rep.int(n, n))
   # G <- t(As) - rep(rowMeans(As), rep.int(n, n))
-  G <- .Call(C_DoubleCentre, -0.5*dmat^2)
+  G <- C_DoubleCentre(-0.5*dmat^2)
   e <- eigen(G, symmetric = TRUE) # rARPACK can help when big matrices
   lambda <- e$values
   v <- e$vectors
@@ -175,9 +175,8 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
 ##' \code{hellinger}:
 ##  Distance between the square root of two vectors, sqrt(sum((sqrt(x_i) - sqrt(y_i))^2)).
 ##' 
-##' @param d distance matrix
-##' @param distance distance to be applied. One of c("euclidean", "hellinger")
-##' @param tol eigenvalues with absolute value <= tol are considered 0. 
+##' @param X distance matrix
+##' @param method distance to be applied. One of c("euclidean", "hellinger")
 ##' 
 ##' @export
 mlmdist <- function(X, method = "euclidean"){
@@ -517,3 +516,6 @@ printCoefmat.mp <- function (x, digits = max(3L, getOption("digits") - 2L),
   invisible(x)
 }
 
+##' @useDynLib mlm dblcen
+##' @keywords internal
+C_DoubleCentre <- function(x) .Call(dblcen, x)
