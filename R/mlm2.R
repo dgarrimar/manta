@@ -64,20 +64,22 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
    # arguments
    # response = factor
   
-  # Checks on the response variable
+  # Checks on arguments
   distance <- match.arg(distance, c("euclidean", "hellinger"))
-  tol <- 1e-10
+  tol = 1e-12
   
+  # Checks on the response variable
   if (inherits(response, "dist") ||
       ((is.matrix(response) || is.data.frame(response)) &&
       isSymmetric(unname(as.matrix(response))))) {
-    
     dmat <- as.matrix(response)
     if(any(is.na(dmat)) || any(is.na(X))){
       dmat[lower.tri(dmat)] <- 0
       which.na <- unique(c(which(!complete.cases(dmat)), which(!complete.cases(X))))
       dmat <- dmat[-which.na, -which.na]
       dmat <- t(dmat) + dmat
+    } else {
+      which.na <- NULL
     }
     if (any(dmat < -tol)){
       stop("dissimilarities must be non-negative")
@@ -92,25 +94,10 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
     k <- ncol(response)
   }
   
-  ## Get new Y, projected into euclidean space
-  ### Compute G
-  G <- C_DoubleCentre(-0.5*dmat^2)
-  ### Compute eigenvalues of G
-  e <- eigen(G, symmetric = TRUE) # rARPACK can help when big matrices
-  lambda <- e$values
-  v <- e$vectors
-  lambda <- lambda[abs(lambda)/max(abs(lambda)) > tol] 
-  if(any(lambda < 0)){
-    stop("all eigenvalues of G should be > 0")
-  }
-  l <- length(lambda)
-  if(l <= 1){
-    stop("number of eigenvalues of G should be > 1")
-  }
-  lambda <- diag(l) * sqrt(lambda)
-  Y <- v[, 1:l] %*% lambda
+  ## Project into euclidean space
+  Y <- project(dmat, k = k, tol = tol)
   
-  ## Center response variables 
+  ## Center Y
   Y <- scale(Y, center = TRUE, scale = FALSE)
   
   ## Reconstruct NA's in Y for `$` rhs (maybe there is a better way to do this...)
@@ -183,8 +170,65 @@ mlmdist <- function(X, method = "euclidean"){
     dmat <- dist(X, method = "euclidean")
   } else if(method == "hellinger"){
     dmat <- dist(sqrt(X), method = "euclidean")
+  } else {
+    stop(sprintf("there is no method called \"%s\"", method))
   }
   return(dmat)
+}
+
+##' Project into euclidean space
+##' 
+##' This function obtains the projection in an euclidean space of the original
+##' variables using its distance matrix, in a similar way to multidimensional
+##' scaling.
+##' 
+##' When \code{k} is provided, \code{\link{eigs_sym}} function is used, 
+##' instead of \code{\link{eigen}}, to compute only the top \code{k} eigenvalues 
+##' and the corresponding eigenvectors.
+##' 
+##' @param dmat distance matrix as obtained by \code{\link{dist}} or 
+##' \code{\link{mlmdist}}.
+##' @param k number of columns of the original matrix. Default is \code{NULL}.
+##' @param tol values below this threshold will be considered 0
+##' 
+##' @import RSpectra
+##' 
+##' @export
+project <- function(dmat, k = NULL, tol = 1e-12){
+  ### Checks
+  if(!is.matrix(dmat)){
+    dmat <- as.matrix(dmat)
+  }
+  ### Compute G
+  G <- C_DoubleCentre(-0.5*dmat^2)
+  ### Compute eigenvalues of G
+  if(is.null(k)){ 
+    # This means the user provided a distance matrix
+    e <- eigen(G, symmetric = TRUE) 
+    lambda <- e$values
+    v <- e$vectors
+  } else { 
+    # This means we know how many eigenvalues do we expect
+    e <- eigs_sym(G, k = k, which = "LM") 
+    lambda <- e$values
+    v <- e$vectors
+  }
+  lambda1 <- lambda[1]
+  if (lambda1 < tol){
+    stop("first eigenvalue of G should be > 0")
+  }
+  lambda <- lambda/lambda1
+  lambda <- lambda[abs(lambda) > tol] 
+  if (any(lambda < tol)){
+    stop("all eigenvalues of G should be > 0")
+  }
+  l <- length(lambda)
+  if(l <= 1){
+    stop("number of eigenvalues of G should be > 1")
+  }
+  lambda <- diag(l) * sqrt(lambda)
+  Y <- v[, 1:l] %*% lambda
+  return(Y)
 }
 
 ##' @author Diego Garrido-Martín
