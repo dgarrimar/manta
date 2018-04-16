@@ -1,12 +1,12 @@
 ##' Multivariate linear models
 ##' 
-##' Transforms the response variables and fits a multivariate
-##' linear model using \code{\link{lm}}. 
+##' Transforms the response variables, fits a multivariate
+##' linear model and computes test statistics and P-values. 
 ##' 
-##' A "\code{Y}" matrix is obtained after projecting into euclidean space 
+##' A \code{Y} matrix is obtained after projecting into euclidean space 
 ##' (as in multidimensional scaling) and centering the original response 
 ##' variables. Then, the multivariate fit obtained by \code{\link{lm}} can be 
-##' used to obtain sums of squares (I, II, III), pseudo F statistics and 
+##' used to compute sums of squares (I, II or III), pseudo F statistics and 
 ##' asymptotic p-values for the explanatory variables in a non-parametric manner.
 ##' 
 ##' @param formula object of class "\code{\link{formula}}": a symbolic 
@@ -26,31 +26,23 @@
 ##' for ordered factors and "\code{\link{contr.poly}}" for unordered factors. 
 ##' Note that this is different from the default setting in \code{\link{options}
 ##' ("contrasts")}.
-##' @param ... additional arguments to be passed to \code{\link{lm}}.
+##' @param type type of sum of squares. One of c("I", "II", "III"). Default is "II".
+##' @param ... additional arguments to be passed to other functions.
 ##' 
-##' @return \code{mlm} returns an object of \code{\link{class}} c("mlm2", "mlm", "lm"); a list containing:
-##' \item{coefficients}{a named vector of coefficients.}
-##' \item{residuals}{the residuals, that is response minus fitted values.}
-##' \item{fitted.values}{the fitted mean values.}
-##' \item{rank}{the numeric rank of the fitted linear model.}
-##' \item{df.residual}{the residual degrees of freedom.}
+##' @return \code{mlm} returns an object of \code{\link{class}} "MLM", a list containing:
 ##' \item{call}{the matched call.}
-##' \item{terms}{the terms object used (transformed response).}
-##' \item{contrasts}{(only where relevant) the contrasts used.}
-##' \item{xlevels}{(only where relevant) a record of the levels of the factors used in fitting.}
-##' \item{model}{the model frame used (transformed response).}
-##' \item{na.action}{(where relevant) information returned by \code{\link{model.frame}} on the special handling of NAs.}
-##' \item{transformation}{transformations of the response matrix.}
-##' In addition, non-null fits will have components assign, effects and qr 
-##' relating to the linear fit. See \code{\link{lm}} for further details. 
-##' Note the multivariate fit is done on the transformed response \code{"Y"}.
+##' \item{aov.tab}{ANOVA table with Df, Sum Sq, Mean Sq, F values, partial R2 and P values}
+##' \item{type}{the type of sum of squares (I, II or III)}
+##' \item{precision}{the precision in P value computation}
+##' \item{distance}{the distance selected for the projection}
+##' \item{fit}{the multivariate fit done on the transformed response variables.}
 ##' 
-##' @seealso \code{\link{summary.mlm2}}
+##' @seealso \code{\link{lm}}.
 ##' 
 ##' @author Diego Garrido-Martín
 ##' @import stats
 ##' @export
-mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
+mlm <- function(formula, data, distance = "euclidean", contrasts = NULL, type = "II", ...){
   
   # Save call and get response and explanatory variables
   cl <- match.call()
@@ -58,20 +50,23 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
   environment(formula) <- environment()
   X <- model.frame(formula[-2], data = data, na.action = "na.pass")
   attributes(X)$terms <- NULL
-
+  
   ## Checks
-   # > 1 response variable
-   # arguments
-   # response = factor
+  # > 1 response variable
+  # arguments
+  # response = factor
   
   # Checks on arguments
   distance <- match.arg(distance, c("euclidean", "hellinger"))
-  tol = 1e-12
+  type <- match.arg(type, c("I", "II", "III"))
+  
+  # Define tolerance
+  tol <- 1e-12                  # Update this. Where is needed?
   
   # Checks on the response variable
   if (inherits(response, "dist") ||
       ((is.matrix(response) || is.data.frame(response)) &&
-      isSymmetric(unname(as.matrix(response))))) {
+       isSymmetric(unname(as.matrix(response))))) {
     dmat <- as.matrix(response)
     if(any(is.na(dmat)) || any(is.na(X))){
       dmat[lower.tri(dmat)] <- 0
@@ -95,7 +90,7 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
   }
   
   ## Project into euclidean space
-  Y <- project(dmat, k = k, tol = tol)
+  Y <- mlmproject(dmat, k = k, tol = tol)
   
   ## Center Y
   Y <- scale(Y, center = TRUE, scale = FALSE)
@@ -129,7 +124,7 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
   } else {
     contr.list <- contrasts
   }
-
+  
   ## Update formula and data
   if (!missing(data)) # expand and check terms
     formula <- terms(formula, data = data)
@@ -140,17 +135,58 @@ mlm2 <- function(formula, data, distance = "euclidean", contrasts = NULL, ...){
   
   ## Fit lm 
   fit <- lm(formula, data = data, contrasts = contr.list, ...)
-
-  ## Update object call and class
-  fit$call <- cl
-  class(fit) <- c('mlm2', class(fit))
   
-  return(fit)
+  ## Get residuals and sample size
+  R <- fit$residuals
+  n <- nrow(R)
+  
+  ## Get dfs, sums of squares, f tildes and partial R2s
+  stats <- mlmtst(fit = fit, type = type)
+  SS <- stats$SS
+  SSe <- stats$SSe
+  Df <- stats$Df
+  df.e <- stats$df.e
+  f.tilde <- stats$f.tilde
+  r2 <- stats$r2
+  
+  # Get eigenvalues from R
+  e <- eigen(cov(R)*(n-1)/df.e, symmetric = T, only.values = T)$values
+  
+  # Compute p.values
+  pv.acc <- mapply(pv.f, f = f.tilde, df.i = Df, MoreArgs = list(df.e = df.e, lambda = e))
+  
+  # Output 
+  ss <- c(unlist(SS), Residuals = SSe)
+  df <- c(Df, Residuals = df.e)
+  ms <- ss/df
+  stats.l <- list(df, ss, ms, f.tilde*df.e/Df, unlist(r2), pv.acc[1, ])
+  cmat <- data.frame()
+  for(i in seq(along = stats.l)) {
+    for(j in names(stats.l[[i]])){
+      cmat[j,i] <- stats.l[[i]][j]
+    }
+  } 
+  cmat <- as.matrix(cmat)
+  colnames(cmat) <- c("Df", "Sum Sq", "Mean Sq", "F value", "R2", "Pr(>F)")
+  
+  # Update lm fit
+
+  fit$call <- cl
+  out <- list("call" = cl,
+              "aov.tab" = cmat,
+              "type" = type,
+              "precision" = pv.acc[2, ],
+              "distance" = distance,
+              "fit" = fit) # Return fit optionally? How to handle NAs?
+  
+  ## Update class
+  class(out) <- c('MLM', class(out))
+  return(out)
 }
 
-##' Distance matrix computation for Euclidean family distances
+##' Distance matrix computation for Euclidean distances
 ##' 
-##' This function computes and returns the distance matrix computed by using 
+##' This function computes and returns the distance matrix obtained by using 
 ##' the specified distance measure to compute the distances between the rows 
 ##' of a data matrix.
 ##' 
@@ -194,7 +230,7 @@ mlmdist <- function(X, method = "euclidean"){
 ##' @import RSpectra
 ##' 
 ##' @export
-project <- function(dmat, k = NULL, tol = 1e-12){
+mlmproject <- function(dmat, k = NULL, tol = 1e-12){
   ### Checks
   if(!is.matrix(dmat)){
     dmat <- as.matrix(dmat)
@@ -231,97 +267,33 @@ project <- function(dmat, k = NULL, tol = 1e-12){
   return(Y)
 }
 
-##' @author Diego Garrido-Martín
-##' @keywords internal
+##' Compute test statistic
+##' 
+##' This function computes the degrees of freedom, sum of squares, partial R2 and
+##' pseudo F statistic for each explanatory variable from \code{fit}.
+##' 
+##' Different types of sums of squares are available.
+##' 
+##' @param fit multivariate fit obtained by \code{\link{lm}}.
+##' @param type type of sum of squares. One of c("I", "II", "III"). Default is \code{II}.
+##' 
 ##' @importFrom car Anova
+##' 
 ##' @export
-print.mlm2 <- function (x, type = "II", digits = max(3L, getOption("digits") - 3L), 
-                        ...){
-  
-  ## Checks
-  type <- match.arg(type, c("I", "II", "III", 1, 2, 3))
-  
-  ## Print "Call" and "Terms"
-  cat("\nCall:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"), 
-      "\n\n", sep = "")
-  cat("Terms (Type", type, "Sum of Squares):\n")
-  
-  ## Compute sums of squares 
-  if (type == "I" || type == 1){
-    mnv <- summary(manova(x))    # Intercept possible here, but always 0 due to centering
-    SSP <- mnv$SS[-length(mnv$SS)]
-    SSPE <- mnv$SS$Residuals
-  } else {
-    if((type == "III" || type == 3) && 
-       any(unlist(x$contrasts) %in% c("contr.treatment", "contr.SAS"))){
-      warning(strwrap("Type III Sum of Squares requires effect- or orthogonal
-                      coding for unordered categorical variables (i.e. contr.sum,
-                      contr.helmert)."))
-    }
-    UU <- car::Anova(x, type = type) 
-    SSP <- UU$SSP
-    SSPE <- UU$SSPE
-  }
-  SS <- lapply(SSP, function(x){diag(x)})
-  SSe <- diag(SSPE)
-  
-  ## Degrees of freedom
-  if(type == "III"){
-    Df <- table(x$assign)
-    names(Df) <- c("(Intercept)", attributes(x$terms)$term.labels)
-  } else{
-    Df <- table(x$assign)[-1]
-    names(Df) <- attributes(x$terms)$term.labels
-  }
-  df.e <- x$df.residual # df.e <- (n-1) - sum(Df)
-  
-  ## Build table to print 
-  ss <- do.call(cbind, c(SS, list(Residuals = SSe)))
-  rse <- sapply(sqrt(ss[,"Residuals"]/df.e), format)
-  ss <- apply(zapsmall(ss), 2L, format)
-  rownames(ss) <- paste0("resp ", 1:nrow(ss))
-  out <- rbind(ss, "Deg. of Freedom" = c(Df, df.e))
-  print(out, quote = F, right = T)
-  cat("\nResidual standard errors: ", rse, "\n")
-  na <- attributes(x$model)$na.action
-  if(!is.null(na)){
-    cat(sprintf("%s observation%s deleted due to missingness\n", 
-                length(na), ifelse(length(na) > 1, "s", "")))
-  }
-  invisible(x)
-}
+mlmtst <- function(fit, type = "II"){
 
-##' Summary method for Non-parametric Multivariate Analysis of Variance
-##' 
-##' A summary method for class "\code{mlm2}".
-##' 
-##' @param object an object of class "\code{mlm2}"
-##' @param type type of sum of squares (either "I", "II", "III" or 1, 2, 3).
-##' @param ... further arguments passed to or from other methods.
-##' 
-##' @importFrom car Anova
-##' @export
-summary.mlm2 <- function(object, type = "II", ...){
-  
-  ## Type of sum of squares
-  type <- match.arg(type, c("I", "II", "III", 1, 2, 3))
-  
-  ## Get residuals and sample size
-  R <- object$residuals
-  n <- nrow(R)
-  
   ## Compute sums of squares 
-  if (type == "I" || type == 1){
-    mnv <- summary(manova(object))    # Intercept possible here, but always 0 due to centering
+  if (type == "I"){
+    mnv <- summary(manova(fit))    # Intercept possible here, but 0 if centering
     SSP <- mnv$SS[-length(mnv$SS)]
     SSPE <- mnv$SS$Residuals
   } else {
-    if((type == "III" || type == 3) && any(unlist(object$contrasts) %in% c("contr.treatment", "contr.SAS"))){
-      warning(strwrap("Type III Sum of Squares requires effect- or orthogonal
+    if((type == "III") && any(unlist(fit$contrasts) %in% c("contr.treatment", "contr.SAS"))){
+      warning(strwrap("Type III Sum of Squares require effect- or orthogonal
                       coding for unordered categorical variables (i.e. contr.sum,
                       contr.helmert).")) 
     }
-    UU <- car::Anova(object, type = type) # Intercept here? McArtor
+    UU <- car::Anova(fit, type = type) # Intercept here ?
     SSP <- UU$SSP
     SSPE <- UU$SSPE
     }
@@ -333,58 +305,24 @@ summary.mlm2 <- function(object, type = "II", ...){
   
   ## Degrees of freedom
   if(type == "III"){
-    Df <- table(object$assign)
-    names(Df) <- c("(Intercept)", attributes(object$terms)$term.labels)
+    Df <- table(fit$assign)
+    names(Df) <- c("(Intercept)", attributes(fit$terms)$term.labels)
   } else{
-    Df <- table(object$assign)[-1]
-    names(Df) <- attributes(object$terms)$term.labels
+    Df <- table(fit$assign)[-1]
+    names(Df) <- attributes(fit$terms)$term.labels
   }
   
-  df.e <- object$df.residual # df.e <- (n-1) - sum(Df)
+  df.e <- fit$df.residual # df.e <- (n-1) - sum(Df)
   
-  ## Get response 
-  Y <- object$model[,1]
+  ## Compute r.squared and adj.r.squared for the full model and per explanatory variable
+  sscp <- crossprod(fit$model[, 1])
+  R2 <- sum(diag(sscp-SSPE))/sum(diag(sscp))
+  # R2adj <- 1-( (1-R2)*(n-1) / df.e )
+  r2 <- lapply(SSP, function(x){sum(diag(x))/sum(diag(sscp))}) 
+  #r2adj <- lapply(r2, function(x){1-( (1-x)*(n-1) / df.e )})
   
-  ## Compute omnibus r.squared and adj.r.squared (per response variable and global)
-  sscp <- crossprod(Y)
-  R2 <- (sscp-SSPE)/sscp
-  R2 <- c(overall = sum(diag(sscp-SSPE))/sum(diag(sscp)),diag(R2))
-  R2adj <- 1-( (1-R2)*(n-1) / df.e )
-  
-  # Compute r.squared per explanatory variable (and response variable)
-  r2 <- lapply(SSP, function(x){c(overall = sum(diag(x))/sum(diag(sscp)), diag(x/sscp))})
-  r2adj <- lapply(r2, function(x){1-( (1-x)*(n-1) / df.e )})
-  
-  # Get eigenvalues from R
-  e <- eigen(cov(R)*(n-1)/df.e, symmetric = T, only.values = T)$values
-  
-  # Compute p.values
-  pv.acc <- mapply(pv.f, f = f.tilde, df.i = Df, MoreArgs = list(df.e = df.e, lambda = e))
-  
-  # Output 
-  SS <- c(SSP, list(Residuals = SSPE)) 
-  attributes(SS)$type <- type
-  
-  r.squared <- unlist(lapply(r2, function(x){as.numeric(x[1])}))
-  stats.l <- list(c(Df, Residuals = df.e), f.tilde*df.e/Df, r.squared, pv.acc[1,])
-  cmat <- data.frame()
-  for(i in seq(along = stats.l)) {
-    for(j in names(stats.l[[i]])){
-      cmat[j,i] <- stats.l[[i]][j]
-    }
-  } 
-  cmat <- as.matrix(cmat)
-  colnames(cmat) <- c("Df", "F", "r2", "P(>F)")
-  attributes(cmat)$precision <- pv.acc[2,]
-  
-  x <- list("row.names" = rownames(cmat),
-            "SS" = SS,
-            "Eigenvalues" = e,
-            "stats" = as.matrix(cmat))
-  
-  class(x) <- 'summary.mlm2'
-  return(x)
-  }
+  return(list("SS" = SS, "SSe" = SSe, "Df" = Df, "df.e" = df.e, "f.tilde" = f.tilde, "r2" = r2))
+}
 
 ##' Compute asymptotic P-values
 ##' 
@@ -422,10 +360,19 @@ pv.f <- function(f, lambda, df.i, df.e, acc = 1e-14){
   return(c(pv, acc))
 }
 
+##' @author Diego Garrido-Martín
+##' @keywords internal
+##' @importFrom car Anova
 ##' @export
-print.summary.mlm2 <- function(x, digits = max(getOption("digits") - 2L, 3L), tol = 1e-30, ...){
+print.MLM <- function (x, digits = max(getOption("digits") - 2L, 3L), ...){
   
-  cmat <- x$stats
+  ## Print Call and type of SS
+  cat("\nCall:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"), 
+      "\n\n", sep = "")
+  cat("Type", x$type, "Sum of Squares\n\n")
+  
+  ## Print ANOVA table
+  cmat <- x$aov.tab
   if (!is.null(heading <- attr(cmat, "heading"))) 
     cat(heading, sep = "\n")
   nc <- dim(cmat)[2L]
@@ -444,15 +391,20 @@ print.summary.mlm2 <- function(x, digits = max(getOption("digits") - 2L, 3L), to
     zap.i <- zap.i[!(zap.i %in% i)]
   printCoefmat.mp(cmat, digits = digits, has.Pvalue = TRUE, 
                   P.values = TRUE, cs.ind = NULL, zap.ind = zap.i, 
-                  tst.ind = tst.i, na.print = "", eps.Pvalue = attributes(cmat)$precision + tol, ...)
+                  tst.ind = tst.i, na.print = "", eps.Pvalue = x$precision + 1e-30, ...)
+
+  na <- attributes(x$fit$model)$na.action
+  if(!is.null(na)){
+    cat(sprintf("%s observation%s deleted due to missingness\n", 
+                length(na), ifelse(length(na) > 1, "s", "")))
+  }
   invisible(x)
 }
 
 ##' Print Coefficient Matrices (multiple p-value precision limits)
 ##' 
 ##' Function \code{\link{printCoefmat}} modified to use multiple p-value 
-##' precision limits in higher-level print methods, such as those for 
-##' \code{\link{summary.mlm2}}.
+##' precision limits in higher-level print methods.
 ##' 
 ##' @seealso \code{\link{printCoefmat}}.
 ##' 

@@ -1,7 +1,7 @@
 Package: mlm
 Type: Package
 Title: Multivariate linear models
-Version: 0.3.0
+Version: 0.4.0
 Date: 2018-03-05
 Author: Diego Garrido-Martín, Ferran Reverter, Miquel Calvo, Roderic Guigo.
 Maintainer: Diego Garrido-Martín <diego.garrido@crg.eu>
