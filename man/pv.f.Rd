@@ -9,13 +9,13 @@ pv.f(f, lambda, df.i, df.e, acc = 1e-14)
 \arguments{
 \item{f}{pseudo-F statistic.}
 
-\item{lambda}{eigenvalues}
+\item{lambda}{eigenvalues.}
 
-\item{df.i}{degrees of freedom of the variable}
+\item{df.i}{degrees of freedom of the variable.}
 
-\item{df.e}{residual degrees of freedom}
+\item{df.e}{degrees of freedom of the residuals.}
 
-\item{acc}{precision limit}
+\item{acc}{precision limit.}
 }
 \description{
 Description

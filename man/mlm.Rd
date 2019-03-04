@@ -4,57 +4,51 @@
 \alias{mlm}
 \title{Multivariate linear models}
 \usage{
-mlm(formula, data, distance = "euclidean", contrasts = NULL, type = "II",
-  ...)
+mlm(formula, data, transform = NULL, contrasts = NULL, type = "II", ...)
 }
 \arguments{
 \item{formula}{object of class "\code{\link{formula}}": a symbolic 
-description of the model to be fitted. The LHS can be either a 
-\code{\link{matrix}} or a \code{\link{data.frame}} with the response 
-variables, a distance matrix or a distance object of class \code{\link{dist}}.
-Note the distance should be euclidean.}
+description of the model to be fitted.}
 
-\item{data}{an optional data frame, list or environment (or object 
-coercible by \code{\link{as.data.frame}} to a data frame) containing the 
-variables in the model. If not found in data, the variables are taken from 
-\code{environment(formula)}, typically the environment from which \code{mlm}
-is called.}
+\item{data}{an optional data frame containing the variables in the model. 
+If not found in data, the variables are taken from \code{environment(formula)}, 
+typically the environment from which \code{mlm} is called.}
 
-\item{distance}{data transformation if the formula LHS is not a distance matrix. 
-One of c("\code{euclidean}", "\code{hellinger}"). Default is "\code{euclidean}".}
+\item{transform}{transformation of the response variables: \code{NULL}, 
+"\code{sqrt}" or "\code{log}". Default is \code{NULL}.}
 
-\item{contrasts}{an optional list. See the \code{contrasts.arg} of 
+\item{contrasts}{an optional list. See \code{contrasts.arg} in 
 \code{\link{model.matrix.default}}. Default is "\code{\link{contr.sum}}" 
 for ordered factors and "\code{\link{contr.poly}}" for unordered factors. 
-Note that this is different from the default setting in \code{\link{options}
-("contrasts")}.}
+Note that this is different from the default setting in 
+\code{\link{options}("contrasts")}.}
 
-\item{type}{type of sum of squares. One of c("I", "II", "III"). Default is "II".}
+\item{type}{type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". Default is "\code{II}".}
 
 \item{...}{additional arguments to be passed to other functions.}
 }
 \value{
 \code{mlm} returns an object of \code{\link{class}} "MLM", a list containing:
 \item{call}{the matched call.}
-\item{aov.tab}{ANOVA table with Df, Sum Sq, Mean Sq, F values, partial R2 and P values}
-\item{type}{the type of sum of squares (I, II or III)}
-\item{precision}{the precision in P value computation}
-\item{distance}{the distance selected for the projection}
-\item{fit}{the multivariate fit done on the transformed response variables.}
+\item{aov.tab}{ANOVA table with Df, Sum Sq, Mean Sq, F values, partial R2 and P values.}
+\item{type}{the type of sum of squares (\code{I}, \code{II} or \code{III}).}
+\item{precision}{the precision in P value computation.}
+\item{transform}{the transformation applied to the response variables.}
+\item{fit}{the multivariate fit done on the centered response variables.}
 }
 \description{
-Transforms the response variables, fits a multivariate
-linear model and computes test statistics and P-values.
+Fits a multivariate linear model and computes test statistics and P-values
+for a set of predictors in a non-parametric manner.
 }
 \details{
-A \code{Y} matrix is obtained after projecting into euclidean space 
-(as in multidimensional scaling) and centering the original response 
+A \code{Y} matrix is obtained after centering the original response 
 variables. Then, the multivariate fit obtained by \code{\link{lm}} can be 
-used to compute sums of squares (I, II or III), pseudo F statistics and 
-asymptotic p-values for the explanatory variables in a non-parametric manner.
+used to compute sums of squares (\code{I}, \code{II} or \code{III}), 
+pseudo F statistics and asymptotic p-values for the explanatory 
+variables in a non-parametric manner.
 }
 \seealso{
-\code{\link{lm}}.
+\code{\link{lm}}
 }
 \author{
 Diego Garrido-Martín

@@ -9,7 +9,7 @@ mlmtst(fit, type = "II")
 \arguments{
 \item{fit}{multivariate fit obtained by \code{\link{lm}}.}
 
-\item{type}{type of sum of squares. One of c("I", "II", "III"). Default is \code{II}.}
+\item{type}{type of sum of squares (\code{I}, \code{II} or \code{III}). Default is \code{II}.}
 }
 \description{
 This function computes the degrees of freedom, sum of squares, partial R2 and

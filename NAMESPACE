@@ -2,11 +2,7 @@
 
 S3method(print,MLM)
 export(mlm)
-export(mlmdist)
-export(mlmproject)
 export(mlmtst)
 export(pv.f)
-import(RSpectra)
 import(stats)
 importFrom(car,Anova)
-useDynLib(mlm,dblcen)

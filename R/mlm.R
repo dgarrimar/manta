@@ -1,48 +1,43 @@
 ##' Multivariate linear models
 ##' 
-##' Transforms the response variables, fits a multivariate
-##' linear model and computes test statistics and P-values. 
+##' Fits a multivariate linear model and computes test statistics and P-values
+##' for a set of predictors in a non-parametric manner. 
 ##' 
-##' A \code{Y} matrix is obtained after projecting into euclidean space 
-##' (as in multidimensional scaling) and centering the original response 
+##' A \code{Y} matrix is obtained after centering the original response 
 ##' variables. Then, the multivariate fit obtained by \code{\link{lm}} can be 
-##' used to compute sums of squares (I, II or III), pseudo F statistics and 
-##' asymptotic p-values for the explanatory variables in a non-parametric manner.
+##' used to compute sums of squares (\code{I}, \code{II} or \code{III}), 
+##' pseudo F statistics and asymptotic p-values for the explanatory 
+##' variables in a non-parametric manner.
 ##' 
 ##' @param formula object of class "\code{\link{formula}}": a symbolic 
-##' description of the model to be fitted. The LHS can be either a 
-##' \code{\link{matrix}} or a \code{\link{data.frame}} with the response 
-##' variables, a distance matrix or a distance object of class \code{\link{dist}}.
-##' Note the distance should be euclidean.
-##' @param data an optional data frame, list or environment (or object 
-##' coercible by \code{\link{as.data.frame}} to a data frame) containing the 
-##' variables in the model. If not found in data, the variables are taken from 
-##' \code{environment(formula)}, typically the environment from which \code{mlm}
-##' is called.
-##' @param distance data transformation if the formula LHS is not a distance matrix. 
-##' One of c("\code{euclidean}", "\code{hellinger}"). Default is "\code{euclidean}".
-##' @param contrasts an optional list. See the \code{contrasts.arg} of 
+##' description of the model to be fitted. 
+##' @param data an optional data frame containing the variables in the model. 
+##' If not found in data, the variables are taken from \code{environment(formula)}, 
+##' typically the environment from which \code{mlm} is called.
+##' @param transform transformation of the response variables: \code{NULL}, 
+##' "\code{sqrt}" or "\code{log}". Default is \code{NULL}.
+##' @param contrasts an optional list. See \code{contrasts.arg} in 
 ##' \code{\link{model.matrix.default}}. Default is "\code{\link{contr.sum}}" 
 ##' for ordered factors and "\code{\link{contr.poly}}" for unordered factors. 
-##' Note that this is different from the default setting in \code{\link{options}
-##' ("contrasts")}.
-##' @param type type of sum of squares. One of c("I", "II", "III"). Default is "II".
+##' Note that this is different from the default setting in 
+##' \code{\link{options}("contrasts")}.
+##' @param type type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". Default is "\code{II}".
 ##' @param ... additional arguments to be passed to other functions.
 ##' 
 ##' @return \code{mlm} returns an object of \code{\link{class}} "MLM", a list containing:
 ##' \item{call}{the matched call.}
-##' \item{aov.tab}{ANOVA table with Df, Sum Sq, Mean Sq, F values, partial R2 and P values}
-##' \item{type}{the type of sum of squares (I, II or III)}
-##' \item{precision}{the precision in P value computation}
-##' \item{distance}{the distance selected for the projection}
-##' \item{fit}{the multivariate fit done on the transformed response variables.}
+##' \item{aov.tab}{ANOVA table with Df, Sum Sq, Mean Sq, F values, partial R2 and P values.}
+##' \item{type}{the type of sum of squares (\code{I}, \code{II} or \code{III}).}
+##' \item{precision}{the precision in P value computation.}
+##' \item{transform}{the transformation applied to the response variables.}
+##' \item{fit}{the multivariate fit done on the centered response variables.}
 ##' 
-##' @seealso \code{\link{lm}}.
+##' @seealso \code{\link{lm}}
 ##' 
 ##' @author Diego Garrido-Martín
 ##' @import stats
 ##' @export
-mlm <- function(formula, data, distance = "euclidean", contrasts = NULL, type = "II", ...){
+mlm <- function(formula, data, transform = NULL, contrasts = NULL, type = "II", ...){
   
   # Save call and get response and explanatory variables
   cl <- match.call()
@@ -50,60 +45,22 @@ mlm <- function(formula, data, distance = "euclidean", contrasts = NULL, type = 
   environment(formula) <- environment()
   X <- model.frame(formula[-2], data = data, na.action = "na.pass")
   attributes(X)$terms <- NULL
-  
+
   ## Checks
   # > 1 response variable
-  # arguments
-  # response = factor
+  # response != factor, matrix
+  # on arguments: 
+  # transform <- match.arg(transform, c(NULL, "sqrt", "log"))
+  # type <- match.arg(type, c("I", "II", "III"))
   
-  # Checks on arguments
-  distance <- match.arg(distance, c("euclidean", "hellinger"))
-  type <- match.arg(type, c("I", "II", "III"))
+  Y <- response
   
-  # Define tolerance
-  tol <- 1e-12                  # Update this. Where is needed?
-  
-  # Checks on the response variable
-  if (inherits(response, "dist") ||
-      ((is.matrix(response) || is.data.frame(response)) &&
-       isSymmetric(unname(as.matrix(response))))) {
-    dmat <- as.matrix(response)
-    if(any(is.na(dmat)) || any(is.na(X))){
-      dmat[lower.tri(dmat)] <- 0
-      which.na <- unique(c(which(!complete.cases(dmat)), which(!complete.cases(X))))
-      dmat <- dmat[-which.na, -which.na]
-      dmat <- t(dmat) + dmat
-    } else {
-      which.na <- NULL
-    }
-    if (any(dmat < -tol)){
-      stop("dissimilarities must be non-negative")
-    }
-    k <- NULL  
-  } else {
-    which.na <- unique(c(which(!complete.cases(response)), which(!complete.cases(X))))
-    if(length(which.na) > 0){
-      response <- response[-which.na, ]
-    }
-    dmat <- as.matrix(mlmdist(response, method = distance))
-    k <- ncol(response)
-  }
-  
-  ## Project into euclidean space
-  Y <- mlmproject(dmat, k = k, tol = tol)
+  ## Transform Y
   
   ## Center Y
   Y <- scale(Y, center = TRUE, scale = FALSE)
   
-  ## Reconstruct NA's in Y for `$` rhs (maybe there is a better way to do this...)
-  if(length(which.na) > 0){
-    ris <- integer(nrow(Y) + length(which.na))
-    ris[which.na] <- nrow(Y) + 1L
-    ris[-which.na] <- seq_len(nrow(Y))
-    Y <- rbind(Y, rep(NA, ncol(Y)))[ris, ]
-  }
-  
-  # Define contrasts
+  ## Define contrasts
   if(is.null(contrasts)){
     contrasts <- list(unordered = "contr.sum", ordered = "contr.poly")
     contr.list <- lapply(1:ncol(X), FUN = function(k){
@@ -176,95 +133,12 @@ mlm <- function(formula, data, distance = "euclidean", contrasts = NULL, type = 
               "aov.tab" = cmat,
               "type" = type,
               "precision" = pv.acc[2, ],
-              "distance" = distance,
-              "fit" = fit) # Return fit optionally? How to handle NAs?
+              "transform" = transform,
+              "fit" = fit)  
   
   ## Update class
-  class(out) <- c('MLM', class(out))
+  class(out) <- c('MLM', class(out)) # Add help for class MLM
   return(out)
-}
-
-##' Distance matrix computation for Euclidean distances
-##' 
-##' This function computes and returns the distance matrix obtained by using 
-##' the specified distance measure to compute the distances between the rows 
-##' of a data matrix.
-##' 
-##' Available distance measures are (written for two vectors x and y):
-##' \code{euclidean}:
-##  Usual distance between the two vectors (2 norm aka L_2), sqrt(sum((x_i - y_i)^2)).
-##' 
-##' \code{hellinger}:
-##  Distance between the square root of two vectors, sqrt(sum((sqrt(x_i) - sqrt(y_i))^2)).
-##' 
-##' @param X distance matrix
-##' @param method distance to be applied. One of c("euclidean", "hellinger")
-##' 
-##' @export
-mlmdist <- function(X, method = "euclidean"){
-  if(method == "euclidean"){
-    dmat <- dist(X, method = "euclidean")
-  } else if(method == "hellinger"){
-    dmat <- dist(sqrt(X), method = "euclidean")
-  } else {
-    stop(sprintf("there is no method called \"%s\"", method))
-  }
-  return(dmat)
-}
-
-##' Project into euclidean space
-##' 
-##' This function obtains the projection in an euclidean space of the original
-##' variables using its distance matrix, in a similar way to multidimensional
-##' scaling.
-##' 
-##' When \code{k} is provided, \code{\link{eigs_sym}} function is used, 
-##' instead of \code{\link{eigen}}, to compute only the top \code{k} eigenvalues 
-##' and the corresponding eigenvectors.
-##' 
-##' @param dmat distance matrix as obtained by \code{\link{dist}} or 
-##' \code{\link{mlmdist}}.
-##' @param k number of columns of the original matrix. Default is \code{NULL}.
-##' @param tol values below this threshold will be considered 0
-##' 
-##' @import RSpectra
-##' 
-##' @export
-mlmproject <- function(dmat, k = NULL, tol = 1e-12){
-  ### Checks
-  if(!is.matrix(dmat)){
-    dmat <- as.matrix(dmat)
-  }
-  ### Compute G
-  G <- C_DoubleCentre(-0.5*dmat^2)
-  ### Compute eigenvalues of G
-  if(is.null(k)){ 
-    # This means the user provided a distance matrix
-    e <- eigen(G, symmetric = TRUE) 
-    lambda <- e$values
-    v <- e$vectors
-  } else { 
-    # This means we know how many eigenvalues do we expect
-    e <- eigs_sym(G, k = k, which = "LM") 
-    lambda <- e$values
-    v <- e$vectors
-  }
-  lambda1 <- lambda[1]
-  if (lambda1 < tol){
-    stop("first eigenvalue of G should be > 0")
-  }
-  lambda <- lambda/lambda1
-  lambda <- lambda[abs(lambda) > tol] 
-  if (any(lambda < tol)){
-    stop("all eigenvalues of G should be > 0")
-  }
-  l <- length(lambda)
-  if(l <= 1){
-    stop("number of eigenvalues of G should be > 1")
-  }
-  lambda <- diag(l) * sqrt(lambda)
-  Y <- v[, 1:l] %*% lambda
-  return(Y)
 }
 
 ##' Compute test statistic
@@ -275,7 +149,7 @@ mlmproject <- function(dmat, k = NULL, tol = 1e-12){
 ##' Different types of sums of squares are available.
 ##' 
 ##' @param fit multivariate fit obtained by \code{\link{lm}}.
-##' @param type type of sum of squares. One of c("I", "II", "III"). Default is \code{II}.
+##' @param type type of sum of squares (\code{I}, \code{II} or \code{III}). Default is \code{II}.
 ##' 
 ##' @importFrom car Anova
 ##' 
@@ -331,17 +205,17 @@ mlmtst <- function(fit, type = "II"){
 ##' Details
 ##' 
 ##' @param f pseudo-F statistic.
-##' @param lambda eigenvalues
-##' @param df.i degrees of freedom of the variable
-##' @param df.e residual degrees of freedom
-##' @param acc precision limit 
+##' @param lambda eigenvalues.
+##' @param df.i degrees of freedom of the variable.
+##' @param df.e degrees of freedom of the residuals.
+##' @param acc precision limit.
 ##' 
 ##' @export
 pv.f <- function(f, lambda, df.i, df.e, acc = 1e-14){
   
   pv.davies <- function(f, lambda, df.i, df.e, lim = 50000, acc = 1e-14){
     H <- c(rep(df.i, length(lambda)), rep(df.e, length(lambda)))
-    pv <- CompQuadForm::davies(0, lambda = c(lambda, -f * lambda), h = H, lim = lim, acc = acc)
+    pv <- CompQuadForm::davies(0, lambda = c(lambda, -f * lambda), h = H, lim = lim, acc = acc) # Skip warning
     if(pv$ifault != 0 || pv$Qq < 0 || pv$Qq > 1){
       return(pv)
     } else {
@@ -510,10 +384,6 @@ printCoefmat.mp <- function (x, digits = max(3L, getOption("digits") - 2L),
   }
   invisible(x)
 }
-
-##' @useDynLib mlm dblcen
-##' @keywords internal
-C_DoubleCentre <- function(x) .Call(dblcen, x)
 
 #' Biomarkers
 #'

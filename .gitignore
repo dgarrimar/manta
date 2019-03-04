@@ -2,6 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-ci/fit.rda
+.docker
+ci/res.rda
+ci/R/**
 data-raw
 TODO
