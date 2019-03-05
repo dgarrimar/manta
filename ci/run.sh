@@ -6,8 +6,8 @@ MD5SUM="12a83357254c789197b9076cfdbc8b63"
 
 # Install and run mlm on sample dataset
 
-COMM1='R CMD INSTALL --preclean --no-multiarch --with-keep.source ../mlm --library=ci/R/lib'
-COMM2='R --vanilla -e "library(mlm, lib = \"ci/R/lib\"); res <- mlm(biomarkers ~ .^2, data = patients); save(res, file = \"ci/res.rda\")"'
+COMM1='R CMD INSTALL --preclean --no-multiarch --with-keep.source ../mlm'
+COMM2='R --vanilla -e "library(mlm); res <- mlm(biomarkers ~ .^2, data = patients); save(res, file = \"ci/res.rda\")"'
 
 docker run --rm --entrypoint /bin/bash -w $PWD -v $PWD:$PWD dgarrimar/mlm:r3.5.2 -c "$COMM1;$COMM2"
 
