@@ -23,7 +23,8 @@ for ordered factors and "\code{\link{contr.poly}}" for unordered factors.
 Note that this is different from the default setting in 
 \code{\link{options}("contrasts")}.}
 
-\item{type}{type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". Default is "\code{II}".}
+\item{type}{type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". 
+Default is "\code{II}".}
 
 \item{...}{additional arguments to be passed to other functions.}
 }
@@ -34,16 +35,16 @@ Note that this is different from the default setting in
 \item{type}{the type of sum of squares (\code{I}, \code{II} or \code{III}).}
 \item{precision}{the precision in P value computation.}
 \item{transform}{the transformation applied to the response variables.}
-\item{fit}{the multivariate fit done on the centered response variables.}
+\item{fit}{the multivariate fit done on the transformed and centered response variables.}
 }
 \description{
-Fits a multivariate linear model and computes test statistics and P-values
+Fits a multivariate linear model and computes test statistics and p-values
 for a set of predictors in a non-parametric manner.
 }
 \details{
-A \code{Y} matrix is obtained after centering the original response 
-variables. Then, the multivariate fit obtained by \code{\link{lm}} can be 
-used to compute sums of squares (\code{I}, \code{II} or \code{III}), 
+A \code{Y} matrix is obtained after transforming and centering the original 
+response variables. Then, the multivariate fit obtained by \code{\link{lm}} 
+can be used to compute sums of squares (\code{I}, \code{II} or \code{III}), 
 pseudo F statistics and asymptotic p-values for the explanatory 
 variables in a non-parametric manner.
 }

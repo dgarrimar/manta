@@ -1,11 +1,11 @@
 ##' Multivariate linear models
 ##' 
-##' Fits a multivariate linear model and computes test statistics and P-values
+##' Fits a multivariate linear model and computes test statistics and p-values
 ##' for a set of predictors in a non-parametric manner. 
 ##' 
-##' A \code{Y} matrix is obtained after centering the original response 
-##' variables. Then, the multivariate fit obtained by \code{\link{lm}} can be 
-##' used to compute sums of squares (\code{I}, \code{II} or \code{III}), 
+##' A \code{Y} matrix is obtained after transforming and centering the original 
+##' response variables. Then, the multivariate fit obtained by \code{\link{lm}} 
+##' can be used to compute sums of squares (\code{I}, \code{II} or \code{III}), 
 ##' pseudo F statistics and asymptotic p-values for the explanatory 
 ##' variables in a non-parametric manner.
 ##' 
@@ -21,7 +21,8 @@
 ##' for ordered factors and "\code{\link{contr.poly}}" for unordered factors. 
 ##' Note that this is different from the default setting in 
 ##' \code{\link{options}("contrasts")}.
-##' @param type type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". Default is "\code{II}".
+##' @param type type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". 
+##' Default is "\code{II}".
 ##' @param ... additional arguments to be passed to other functions.
 ##' 
 ##' @return \code{mlm} returns an object of \code{\link{class}} "MLM", a list containing:
@@ -30,7 +31,7 @@
 ##' \item{type}{the type of sum of squares (\code{I}, \code{II} or \code{III}).}
 ##' \item{precision}{the precision in P value computation.}
 ##' \item{transform}{the transformation applied to the response variables.}
-##' \item{fit}{the multivariate fit done on the centered response variables.}
+##' \item{fit}{the multivariate fit done on the transformed and centered response variables.}
 ##' 
 ##' @seealso \code{\link{lm}}
 ##' 
@@ -39,64 +40,61 @@
 ##' @export
 mlm <- function(formula, data, transform = NULL, contrasts = NULL, type = "II", ...){
   
-  # Save call and get response and explanatory variables
-  cl <- match.call()
-  response <- eval(formula[[2]], environment(formula), globalenv())
-  environment(formula) <- environment()
-  X <- model.frame(formula[-2], data = data, na.action = "na.pass")
-  attributes(X)$terms <- NULL
-
   ## Checks
   # > 1 response variable
-  # response != factor, matrix
+  # response != factor, matrix, data
   # on arguments: 
   # transform <- match.arg(transform, c(NULL, "sqrt", "log"))
   # type <- match.arg(type, c("I", "II", "III"))
   
-  Y <- response
+  ## Save call, build model frame, obtain responses
+  cl <- match.call()
+  m <- match(c("formula", "data"), names(cl), 0L)
+  mf <- cl[c(1L, m)]
+  mf$drop.unused.levels <- TRUE
+  mf[[1L]] <- quote(stats::model.frame)
+  mf <- eval(mf, parent.frame())               
+    # na.action = "na.omit"
+    # This means that the rows with at least one NA either
+    # in Y or X (only considering variables used in the formula) 
+    # will be removed before centering 
+  response <- model.response(mf, "numeric")
   
-  ## Transform Y
-  
-  ## Center Y
+  ## Transform and center responses, update model frame
+  if(is.null(transform)){
+    Y <- response
+  } else if (transform == "sqrt"){
+    Y <- sqrt(Y)
+  } else if (transform == "log"){
+    Y <- log(Y)
+  } 
   Y <- scale(Y, center = TRUE, scale = FALSE)
+  mf[[1]] <- Y
   
   ## Define contrasts
   if(is.null(contrasts)){
     contrasts <- list(unordered = "contr.sum", ordered = "contr.poly")
-    contr.list <- lapply(1:ncol(X), FUN = function(k){
-      # Default: no contrast for quantitaive predictor
-      contr.type <- NULL
-      # Sum contrasts for unordered categorical predictor
-      if(is.factor(X[,k])){
-        contr.type <- contrasts$unordered
-      }
-      # Polynomial contrasts for ordered categorical predictor
-      if(is.ordered(X[,k])){
-        contr.type <- contrasts$ordered
-      }
+    dc <- attr(terms(mf), "dataClasses")[-1]
+    contr.list <- lapply(dc, FUN = function(k){
+      # No contrast for quantitaive predictors
+      # Sum contrasts for unordered categorical predictors
+      # Polynomial contrasts for ordered categorical predictors
+      contr.type <- switch(k, "factor" = contrasts$unordered,
+                           "ordered" = contrasts$ordered)
       return(contr.type)
     })
-    names(contr.list) <- colnames(X)
     contr.list <- contr.list[!unlist(lapply(contr.list, is.null))]
   } else {
     contr.list <- contrasts
   }
-  
-  ## Update formula and data
-  if (!missing(data)) # expand and check terms
-    formula <- terms(formula, data = data)
-  formula <- update(formula, Y ~ .)
-  ## no data? find variables in .GlobalEnv
-  if (missing(data))
-    data <- model.frame(delete.response(terms(formula)))
-  
-  ## Fit lm 
-  fit <- lm(formula, data = data, contrasts = contr.list, ...)
-  
+ 
+  ## Fit lm
+  fit <- lm(mf, contrasts = contr.list, ...)
+
   ## Get residuals and sample size
   R <- fit$residuals
   n <- nrow(R)
-  
+
   ## Get dfs, sums of squares, f tildes and partial R2s
   stats <- mlmtst(fit = fit, type = type)
   SS <- stats$SS
@@ -105,14 +103,14 @@ mlm <- function(formula, data, transform = NULL, contrasts = NULL, type = "II", 
   df.e <- stats$df.e
   f.tilde <- stats$f.tilde
   r2 <- stats$r2
-  
+
   # Get eigenvalues from R
   e <- eigen(cov(R)*(n-1)/df.e, symmetric = T, only.values = T)$values
-  
+
   # Compute p.values
   pv.acc <- mapply(pv.f, f = f.tilde, df.i = Df, MoreArgs = list(df.e = df.e, lambda = e))
-  
-  # Output 
+
+  # Output
   ss <- c(unlist(SS), Residuals = SSe)
   df <- c(Df, Residuals = df.e)
   ms <- ss/df
@@ -122,20 +120,17 @@ mlm <- function(formula, data, transform = NULL, contrasts = NULL, type = "II", 
     for(j in names(stats.l[[i]])){
       cmat[j,i] <- stats.l[[i]][j]
     }
-  } 
+  }
   cmat <- as.matrix(cmat)
   colnames(cmat) <- c("Df", "Sum Sq", "Mean Sq", "F value", "R2", "Pr(>F)")
-  
-  # Update lm fit
 
-  fit$call <- cl
   out <- list("call" = cl,
               "aov.tab" = cmat,
               "type" = type,
               "precision" = pv.acc[2, ],
               "transform" = transform,
-              "fit" = fit)  
-  
+              "fit" = fit)
+
   ## Update class
   class(out) <- c('MLM', class(out)) # Add help for class MLM
   return(out)
