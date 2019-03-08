@@ -4,7 +4,7 @@
 \alias{mlm}
 \title{Multivariate linear models}
 \usage{
-mlm(formula, data, transform = NULL, contrasts = NULL, type = "II", ...)
+mlm(formula, data, transform = NULL, type = "II", contrasts = NULL, ...)
 }
 \arguments{
 \item{formula}{object of class "\code{\link{formula}}": a symbolic 
@@ -17,14 +17,14 @@ typically the environment from which \code{mlm} is called.}
 \item{transform}{transformation of the response variables: \code{NULL}, 
 "\code{sqrt}" or "\code{log}". Default is \code{NULL}.}
 
+\item{type}{type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". 
+Default is "\code{II}".}
+
 \item{contrasts}{an optional list. See \code{contrasts.arg} in 
 \code{\link{model.matrix.default}}. Default is "\code{\link{contr.sum}}" 
 for ordered factors and "\code{\link{contr.poly}}" for unordered factors. 
 Note that this is different from the default setting in 
 \code{\link{options}("contrasts")}.}
-
-\item{type}{type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". 
-Default is "\code{II}".}
 
 \item{...}{additional arguments to be passed to other functions.}
 }

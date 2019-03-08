@@ -16,13 +16,13 @@
 ##' typically the environment from which \code{mlm} is called.
 ##' @param transform transformation of the response variables: \code{NULL}, 
 ##' "\code{sqrt}" or "\code{log}". Default is \code{NULL}.
+##' @param type type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". 
+##' Default is "\code{II}".
 ##' @param contrasts an optional list. See \code{contrasts.arg} in 
 ##' \code{\link{model.matrix.default}}. Default is "\code{\link{contr.sum}}" 
 ##' for ordered factors and "\code{\link{contr.poly}}" for unordered factors. 
 ##' Note that this is different from the default setting in 
 ##' \code{\link{options}("contrasts")}.
-##' @param type type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". 
-##' Default is "\code{II}".
 ##' @param ... additional arguments to be passed to other functions.
 ##' 
 ##' @return \code{mlm} returns an object of \code{\link{class}} "MLM", a list containing:
@@ -38,14 +38,11 @@
 ##' @author Diego Garrido-Martín
 ##' @import stats
 ##' @export
-mlm <- function(formula, data, transform = NULL, contrasts = NULL, type = "II", ...){
+mlm <- function(formula, data, transform = NULL, type = "II", contrasts = NULL, ...){
   
   ## Checks
-  # > 1 response variable
-  # response != factor, matrix, data
-  # on arguments: 
-  # transform <- match.arg(transform, c(NULL, "sqrt", "log"))
-  # type <- match.arg(type, c("I", "II", "III"))
+  transform <- match.arg(transform, c(NULL, "sqrt", "log"))
+  type <- match.arg(type, c("I", "II", "III"))
   
   ## Save call, build model frame, obtain responses
   cl <- match.call()
@@ -59,6 +56,10 @@ mlm <- function(formula, data, transform = NULL, contrasts = NULL, type = "II", 
     # in Y or X (only considering variables used in the formula) 
     # will be removed before centering 
   response <- model.response(mf, "numeric")
+  
+  if (!is.matrix(response)){ # Check
+    stop("Number of response variables should be >= 2.")
+  }
   
   ## Transform and center responses, update model frame
   if(is.null(transform)){
