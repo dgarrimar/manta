@@ -14,8 +14,8 @@
 ##' @param data an optional data frame containing the variables in the model. 
 ##' If not found in data, the variables are taken from \code{environment(formula)}, 
 ##' typically the environment from which \code{mlm} is called.
-##' @param transform transformation of the response variables: \code{NULL}, 
-##' "\code{sqrt}" or "\code{log}". Default is \code{NULL}.
+##' @param transform transformation of the response variables: "\code{none}", 
+##' "\code{sqrt}" or "\code{log}". Default is "\code{none}".
 ##' @param type type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". 
 ##' Default is "\code{II}".
 ##' @param contrasts an optional list. See \code{contrasts.arg} in 
@@ -38,10 +38,10 @@
 ##' @author Diego Garrido-Martín
 ##' @import stats
 ##' @export
-mlm <- function(formula, data, transform = NULL, type = "II", contrasts = NULL, ...){
+mlm <- function(formula, data, transform = "none", type = "II", contrasts = NULL, ...){
   
   ## Checks
-  transform <- match.arg(transform, c(NULL, "sqrt", "log"))
+  transform <- match.arg(transform, c("none", "sqrt", "log"))
   type <- match.arg(type, c("I", "II", "III"))
   
   ## Save call, build model frame, obtain responses
@@ -62,12 +62,12 @@ mlm <- function(formula, data, transform = NULL, type = "II", contrasts = NULL, 
   }
   
   ## Transform and center responses, update model frame
-  if(is.null(transform)){
+  if(transform == "none"){
     Y <- response
   } else if (transform == "sqrt"){
-    Y <- sqrt(Y)
+    Y <- sqrt(response)
   } else if (transform == "log"){
-    Y <- log(Y)
+    Y <- log(response)
   } 
   Y <- scale(Y, center = TRUE, scale = FALSE)
   mf[[1]] <- Y

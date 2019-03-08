@@ -4,7 +4,7 @@
 \alias{mlm}
 \title{Multivariate linear models}
 \usage{
-mlm(formula, data, transform = NULL, type = "II", contrasts = NULL, ...)
+mlm(formula, data, transform = "none", type = "II", contrasts = NULL, ...)
 }
 \arguments{
 \item{formula}{object of class "\code{\link{formula}}": a symbolic 
@@ -14,8 +14,8 @@ description of the model to be fitted.}
 If not found in data, the variables are taken from \code{environment(formula)}, 
 typically the environment from which \code{mlm} is called.}
 
-\item{transform}{transformation of the response variables: \code{NULL}, 
-"\code{sqrt}" or "\code{log}". Default is \code{NULL}.}
+\item{transform}{transformation of the response variables: "\code{none}", 
+"\code{sqrt}" or "\code{log}". Default is "\code{none}".}
 
 \item{type}{type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". 
 Default is "\code{II}".}
