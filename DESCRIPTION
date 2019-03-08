@@ -1,11 +1,11 @@
 Package: mlm
 Type: Package
 Title: Multivariate linear models
-Version: 0.6.0
-Date: 2018-03-05
+Version: 0.6.1
+Date: 2019-03-08
 Author: Diego Garrido-Martín, Ferran Reverter, Miquel Calvo, Roderic Guigo.
 Maintainer: Diego Garrido-Martín <diego.garrido@crg.eu>
-Description: Performs non-parametric, multivariate regression with analytic asymptotic p-values.
+Description: Performs non-parametric, multivariate regression with asymptotic p-values.
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
 Depends:
