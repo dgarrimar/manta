@@ -3,6 +3,6 @@
 S3method(print,MLM)
 export(mlm)
 export(mlmtst)
-export(pv.f)
+export(pv.ss)
 import(stats)
 importFrom(car,Anova)

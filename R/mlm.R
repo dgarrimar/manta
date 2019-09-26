@@ -109,7 +109,7 @@ mlm <- function(formula, data, transform = "none", type = "II", contrasts = NULL
   e <- eigen(cov(R)*(n-1)/df.e, symmetric = T, only.values = T)$values
 
   # Compute p.values
-  pv.acc <- mapply(pv.f, f = f.tilde, df.i = Df, MoreArgs = list(df.e = df.e, lambda = e))
+  pv.acc <- mapply(pv.ss, ss = unlist(SS), df.i = Df, MoreArgs = list(lambda = e))
 
   # Output
   ss <- c(unlist(SS), Residuals = SSe)
@@ -200,34 +200,44 @@ mlmtst <- function(fit, type = "II"){
 ##' 
 ##' Details
 ##' 
-##' @param f pseudo-F statistic.
+##' @param ss numerator of the pseudo-F statistic.
 ##' @param lambda eigenvalues.
-##' @param df.i degrees of freedom of the variable.
-##' @param df.e degrees of freedom of the residuals.
-##' @param acc precision limit.
+##' @param df.i degrees of freedom of the numerator of the test statistic.
+##' @param eps precision limit.
+##' @param tol lambda/sum(lambda) > tol.
 ##' 
 ##' @export
-pv.f <- function(f, lambda, df.i, df.e, acc = 1e-14){
+pv.ss <- function(ss, lambda, df.i, eps = 1e-14, tol = 1e-3){
   
-  pv.davies <- function(f, lambda, df.i, df.e, lim = 50000, acc = 1e-14){
-    H <- c(rep(df.i, length(lambda)), rep(df.e, length(lambda)))
-    pv <- CompQuadForm::davies(0, lambda = c(lambda, -f * lambda), h = H, lim = lim, acc = acc) # Skip warning
-    if(pv$ifault != 0 || pv$Qq < 0 || pv$Qq > 1){
+  pv.farebrother <- function(ss, lambda, df.i, maxit = 100000, eps = 1e-14){
+    pv <- CompQuadForm::farebrother(ss, lambda = lambda, 
+                                    h = rep(df.i, length(lambda)), 
+                                    maxit = maxit, eps = eps) # Skip warning
+    if(pv$ifault %in% c(0,4)){
+      return(pv$Qq)
+    } else if (pv$ifault %in% c(5,9)){
       return(pv)
     } else {
-      return(pv$Qq)
+      print(pv)
+      stop ("Unexpected fault indicator in Farebrother method.")
     }
   }
   
-  pv <- pv.davies(f = f, lambda = lambda, df.i = df.i, df.e = df.e, acc = acc)
+  eps0 <- eps
+  lambda <- lambda[lambda/sum(lambda) > tol]
+  pv  <- pv.farebrother(ss = ss, lambda = lambda, df.i = df.i, eps = eps)
   while (length(pv) > 1) {
-    acc <- acc * 10
-    pv  <- pv.davies(f = f, lambda = lambda, df.i = df.i, df.e = df.e, acc = acc)
+    eps <- eps * 10
+    if(eps > 1e-8){
+      print(pv)
+      stop("Precision > 1e-8.")
+    }
+    pv  <- pv.farebrother(ss = ss, lambda = lambda, df.i = df.i, eps = eps)
   }
-  if (pv < acc) {
-    pv <- acc
+  if (pv < eps0) {
+    pv <- eps0
   }
-  return(c(pv, acc))
+  return(c(pv, eps))
 }
 
 ##' @author Diego Garrido-Martín
