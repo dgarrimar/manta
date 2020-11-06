@@ -4,12 +4,14 @@
 \name{biomarkers}
 \alias{biomarkers}
 \title{Biomarkers}
-\format{A matrix with 100 rows and 5 numerical variables:
+\format{
+A matrix with 100 rows and 5 numerical variables:
 \describe{
   \item{biomarker1}{levels of biomarker1}
   \item{biomarker2}{levels of biomarker2}
   ...
-}}
+}
+}
 \usage{
 biomarkers
 }

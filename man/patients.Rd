@@ -4,14 +4,16 @@
 \name{patients}
 \alias{patients}
 \title{Patients}
-\format{A matrix with 100 rows and 3 variables:
+\format{
+A matrix with 100 rows and 3 variables:
 \describe{
   \item{gender}{Gender of the patient (factor with levels: \code{male} and 
   \code{female})}
   \item{age}{Age of the patient (numerical)}
   \item{disease}{Disease status of the patient (ordered factor with levels
   \code{healthy}, \code{"mild"}, \code{"severe"})}
-}}
+}
+}
 \usage{
 patients
 }

@@ -4,12 +4,21 @@
 \alias{printCoefmat.mp}
 \title{Print Coefficient Matrices (multiple p-value precision limits)}
 \usage{
-printCoefmat.mp(x, digits = max(3L, getOption("digits") - 2L),
+printCoefmat.mp(
+  x,
+  digits = max(3L, getOption("digits") - 2L),
   signif.stars = getOption("show.signif.stars"),
-  signif.legend = signif.stars, dig.tst = max(1L, min(5L, digits - 1L)),
-  cs.ind = 1:k, tst.ind = k + 1, zap.ind = integer(), P.values = NULL,
+  signif.legend = signif.stars,
+  dig.tst = max(1L, min(5L, digits - 1L)),
+  cs.ind = 1:k,
+  tst.ind = k + 1,
+  zap.ind = integer(),
+  P.values = NULL,
   has.Pvalue = nc >= 4 && substr(colnames(x)[nc], 1, 3) == "Pr(",
-  eps.Pvalue = .Machine$double.eps, na.print = "NA", ...)
+  eps.Pvalue = .Machine$double.eps,
+  na.print = "NA",
+  ...
+)
 }
 \description{
 Function \code{\link{printCoefmat}} modified to use multiple p-value 
