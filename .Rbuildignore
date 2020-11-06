@@ -2,5 +2,7 @@
 ^\.Rproj\.user$
 ^data-raw$
 ^\.travis\.yml$
-ci
-.docker
+^ci$
+^\.docker$
+^\.Rhistory$
+^\.git*$
