@@ -3,8 +3,8 @@ Type: Package
 Title: Multivariate linear models
 Version: 0.6.2
 Date: 2019-03-08
-Author: Diego Garrido-Martín, Ferran Reverter, Miquel Calvo, Roderic Guigo.
-Maintainer: Diego Garrido-Martín <diego.garrido@crg.eu>
+Author: Diego Garrido-Mart<U+00ED>n, Ferran Reverter, Miquel Calvo, Roderic Guig<U+00F3>.
+Maintainer: Diego Garrido-Mart<U+00ED>n <diego.garrido@crg.eu>
 Description: Performs non-parametric, multivariate regression with asymptotic p-values.
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
@@ -18,4 +18,4 @@ Suggests:
 LazyData: true
 URL: http://github.com/dgarrimar/mlm
 BugReports: http://github.com/dgarrimar/mlm/issues
-RoxygenNote: 6.0.1
+RoxygenNote: 7.1.1
