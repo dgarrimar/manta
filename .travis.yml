@@ -1,12 +1,13 @@
+os: linux
 dist: bionic
 
-sudo: required
+language: ruby
 
 services:
  - docker
 
 install:
- - docker build -t dgarrimar/mlm:r3.5.2 ci/docker/
+ - docker build -t dgarrimar/mlm:r4.0.3 ci/docker/
 
 script:
  - bash ci/run.sh

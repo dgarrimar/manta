@@ -1,4 +1,4 @@
-FROM r-base:3.5.2
+FROM r-base:4.0.3
 
 RUN apt-get update --fix-missing -qq && apt-get install -y -q \
         libssl-dev \
