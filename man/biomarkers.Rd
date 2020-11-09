@@ -20,4 +20,7 @@ A simulated dataset containing the levels of 5 biomarkers,
 measured in 100 individuals, with different scales. 
 Missing observations appear as \code{NA}.
 }
+\author{
+Diego Garrido-Martín
+}
 \keyword{datasets}

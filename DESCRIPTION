@@ -1,17 +1,16 @@
 Package: mlm
 Type: Package
 Title: Multivariate linear models
-Version: 0.6.2
-Date: 2019-03-08
+Version: 0.7.0
+Date: 2020-11-09
 Author: Diego Garrido-Mart<U+00ED>n, Ferran Reverter, Miquel Calvo, Roderic Guig<U+00F3>.
 Maintainer: Diego Garrido-Mart<U+00ED>n <diego.garrido@crg.eu>
 Description: Performs non-parametric, multivariate regression with asymptotic p-values.
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
 Depends:
-    R (>= 3.0.0)
+    R (>= 4.0.0)
 Imports:
-    car,
     CompQuadForm
 Suggests:
     testthat

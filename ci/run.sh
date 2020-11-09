@@ -2,7 +2,7 @@
 
 # Pre-computed checksum obtained using Docker and R vs 4.0.3 (as in Travis)
 
-MD5SUM="b78a1116c530ae5a05e5218ba4e1ce84"
+MD5SUM="c8ed15c43fceafa18c626386a2a561dc"
 
 # Install and run mlm on sample dataset
 

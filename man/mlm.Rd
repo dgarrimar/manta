@@ -4,7 +4,15 @@
 \alias{mlm}
 \title{Multivariate linear models}
 \usage{
-mlm(formula, data, transform = "none", type = "II", contrasts = NULL, ...)
+mlm(
+  formula,
+  data,
+  transform = "none",
+  type = "II",
+  contrasts = NULL,
+  subset = NULL,
+  fit = FALSE
+)
 }
 \arguments{
 \item{formula}{object of class "\code{\link{formula}}": a symbolic 
@@ -26,7 +34,10 @@ for ordered factors and "\code{\link{contr.poly}}" for unordered factors.
 Note that this is different from the default setting in 
 \code{\link{options}("contrasts")}.}
 
-\item{...}{additional arguments to be passed to other functions.}
+\item{subset}{subset of explanatory variables for which summary statistics will be reported.}
+
+\item{fit}{logical. If \code{TRUE} the multivariate fit on transformed and centered responses
+is returned.}
 }
 \value{
 \code{mlm} returns an object of \code{\link{class}} "MLM", a list containing:
@@ -35,7 +46,9 @@ Note that this is different from the default setting in
 \item{type}{the type of sum of squares (\code{I}, \code{II} or \code{III}).}
 \item{precision}{the precision in P value computation.}
 \item{transform}{the transformation applied to the response variables.}
-\item{fit}{the multivariate fit done on the transformed and centered response variables.}
+\item{na.omit}{incomplete cases removed (see \code{\link{na.omit}})}
+\item{fit}{if \code{fit = TRUE} the multivariate fit done on the transformed and centered 
+response variables is also returned.}
 }
 \description{
 Fits a multivariate linear model and computes test statistics and p-values

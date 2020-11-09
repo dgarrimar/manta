@@ -21,4 +21,7 @@ patients
 A simulated dataset containing the gender, age and disease status of 100
 individuals. Missing observations appear as \code{NA}.
 }
+\author{
+Diego Garrido-Martín
+}
 \keyword{datasets}

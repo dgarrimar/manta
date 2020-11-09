@@ -27,4 +27,7 @@ precision limits in higher-level print methods.
 \seealso{
 \code{\link{printCoefmat}}.
 }
+\author{
+Diego Garrido-Martín
+}
 \keyword{internal}

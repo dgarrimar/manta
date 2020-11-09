@@ -23,3 +23,6 @@ Description
 \details{
 Details
 }
+\author{
+Diego Garrido-Martín
+}

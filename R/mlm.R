@@ -23,7 +23,9 @@
 ##' for ordered factors and "\code{\link{contr.poly}}" for unordered factors. 
 ##' Note that this is different from the default setting in 
 ##' \code{\link{options}("contrasts")}.
-##' @param ... additional arguments to be passed to other functions.
+##' @param subset subset of explanatory variables for which summary statistics will be reported.
+##' @param fit logical. If \code{TRUE} the multivariate fit on transformed and centered responses
+##' is returned.
 ##' 
 ##' @return \code{mlm} returns an object of \code{\link{class}} "MLM", a list containing:
 ##' \item{call}{the matched call.}
@@ -31,14 +33,19 @@
 ##' \item{type}{the type of sum of squares (\code{I}, \code{II} or \code{III}).}
 ##' \item{precision}{the precision in P value computation.}
 ##' \item{transform}{the transformation applied to the response variables.}
-##' \item{fit}{the multivariate fit done on the transformed and centered response variables.}
+##' \item{na.omit}{incomplete cases removed (see \code{\link{na.omit}})}
+##' \item{fit}{if \code{fit = TRUE} the multivariate fit done on the transformed and centered 
+##' response variables is also returned.}
 ##' 
 ##' @seealso \code{\link{lm}}
 ##' 
 ##' @author Diego Garrido-Martín
+##' 
 ##' @import stats
 ##' @export
-mlm <- function(formula, data, transform = "none", type = "II", contrasts = NULL, ...){
+##' 
+mlm <- function(formula, data, transform = "none", type = "II", 
+                contrasts = NULL, subset = NULL, fit = FALSE){
   
   ## Checks
   transform <- match.arg(transform, c("none", "sqrt", "log"))
@@ -49,12 +56,12 @@ mlm <- function(formula, data, transform = "none", type = "II", contrasts = NULL
   m <- match(c("formula", "data"), names(cl), 0L)
   mf <- cl[c(1L, m)]
   mf$drop.unused.levels <- TRUE
+  mf$na.action = "na.omit"
+    # The rows with at least one NA either in Y or X 
+    # (only considering variables used in the formula) 
+    # will be removed before transforming/centering
   mf[[1L]] <- quote(stats::model.frame)
   mf <- eval(mf, parent.frame())               
-    # na.action = "na.omit"
-    # This means that the rows with at least one NA either
-    # in Y or X (only considering variables used in the formula) 
-    # will be removed before centering
   mt <- attr(mf, "terms")
   response <- model.response(mf, "numeric")
   
@@ -98,41 +105,41 @@ mlm <- function(formula, data, transform = "none", type = "II", contrasts = NULL
   X <- model.matrix(mt, mf, contr.list)
   
   ## Fit lm
-  fit <- lm.fit(X, Y, ...)
-  class(fit) <- c("mlm", "lm")
-  fit$na.action <- attr(mf, "na.action")
-  fit$contrasts <- attr(X, "contrasts")
-  fit$xlevels <- .getXlevels(mt, mf)
-  fit$call <- cl[c(1L, m)]
-  fit$call[[1L]] <- quote(lm)
-  if(length(contr.list)>0) fit$call$contrasts <- quote(contr.list)
-  fit$terms <- mt
-  fit$model <- mf
+  lmfit <- lm.fit(X, Y)
+  class(lmfit) <- c("mlm", "lm")
+  lmfit$na.action <- attr(mf, "na.action")
+  lmfit$contrasts <- attr(X, "contrasts")
+  lmfit$xlevels <- .getXlevels(mt, mf)
+  lmfit$call <- cl[c(1L, m)]
+  lmfit$call[[1L]] <- quote(lm)
+  if(length(contr.list)>0) lmfit$call$contrasts <- quote(contr.list)
+  lmfit$terms <- mt
+  lmfit$model <- mf
 
   ## Get residuals and sample size
-  R <- fit$residuals
+  R <- lmfit$residuals
   n <- nrow(R)
 
   ## Get dfs, sums of squares, f tildes and partial R2s
-  stats <- mlmtst(fit = fit, type = type)
-  SS <- stats$SS
+  stats <- mlmtst(fit = lmfit, X = X, type = type, subset = subset)
+  SSi <- stats$SSi
   SSe <- stats$SSe
-  Df <- stats$Df
+  df.i <- stats$df.i
   df.e <- stats$df.e
   f.tilde <- stats$f.tilde
   r2 <- stats$r2
-
+  
   # Get eigenvalues from R
   e <- eigen(cov(R)*(n-1)/df.e, symmetric = T, only.values = T)$values
-
+  
   # Compute p.values
-  pv.acc <- mapply(pv.ss, ss = unlist(SS), df.i = Df, MoreArgs = list(lambda = e))
-
+  pv.acc <- mapply(pv.ss, ss = SSi, df.i = df.i, MoreArgs = list(lambda = e))
+  
   # Output
-  ss <- c(unlist(SS), Residuals = SSe)
-  df <- c(Df, Residuals = df.e)
+  ss <- c(SSi, Residuals = SSe)
+  df <- c(df.i, Residuals = df.e)
   ms <- ss/df
-  stats.l <- list(df, ss, ms, f.tilde*df.e/Df, unlist(r2), pv.acc[1, ])
+  stats.l <- list(df, ss, ms, f.tilde, r2, pv.acc[1, ])
   cmat <- data.frame()
   for(i in seq(along = stats.l)) {
     for(j in names(stats.l[[i]])){
@@ -147,7 +154,10 @@ mlm <- function(formula, data, transform = "none", type = "II", contrasts = NULL
               "type" = type,
               "precision" = pv.acc[2, ],
               "transform" = transform,
-              "fit" = fit)
+              "na.omit" = lmfit$na.action)
+  if(fit){
+    out$fit <- lmfit
+  }
 
   ## Update class
   class(out) <- c('MLM', class(out)) # Add help for class MLM
@@ -157,58 +167,149 @@ mlm <- function(formula, data, transform = "none", type = "II", contrasts = NULL
 ##' Compute test statistic
 ##' 
 ##' This function computes the degrees of freedom, sum of squares, partial R2 and
-##' pseudo F statistic for each explanatory variable from \code{fit}.
+##' pseudo F statistics for each explanatory variable from \code{fit}.
 ##' 
 ##' Different types of sums of squares are available.
 ##' 
 ##' @param fit multivariate fit obtained by \code{\link{lm}}.
+##' @param X design matrix obtained by \code{\link{model.matrix}}.
 ##' @param type type of sum of squares (\code{I}, \code{II} or \code{III}). Default is \code{II}.
+##' @param subset subset of explanatory variables for which summary statistics will be reported.
 ##' 
-##' @importFrom car Anova
+##' @author Diego Garrido-Martín
 ##' 
 ##' @export
-mlmtst <- function(fit, type = "II"){
-
-  ## Compute sums of squares 
-  if (type == "I"){
-    mnv <- summary(manova(fit))    # Intercept possible here, but 0 if centering
-    SSP <- mnv$SS[-length(mnv$SS)]
-    SSPE <- mnv$SS$Residuals
-  } else {
-    if((type == "III") && any(unlist(fit$contrasts) %in% c("contr.treatment", "contr.SAS"))){
-      warning(strwrap("Type III Sum of Squares require effect- or orthogonal
-                      coding for unordered categorical variables (i.e. contr.sum,
-                      contr.helmert).")) 
-    }
-    UU <- car::Anova(fit, type = type) # Intercept here ?
-    SSP <- UU$SSP
-    SSPE <- UU$SSPE
-    }
-  SS <- lapply(SSP, function(x){sum(diag(x))})
-  SSe <- sum(diag(SSPE))
+##' 
+mlmtst <- function(fit, X, type = "II", subset = NULL){
   
-  ## Compute pseudo F's
-  f.tilde <- unlist(lapply(SS, function(x){x/SSe}))
+  # Error sum-of-squares and cross-products (SSCP) matrix 
+  SSCP.e <- crossprod(fit$residuals) 
   
-  ## Degrees of freedom
-  if(type == "III"){
-    Df <- table(fit$assign)
-    names(Df) <- c("(Intercept)", attributes(fit$terms)$term.labels)
-  } else{
-    Df <- table(fit$assign)[-1]
-    names(Df) <- attributes(fit$terms)$term.labels
+  # Check full rank for type I and III sums-of-squares
+  if(type != "II"){
+    rank <- sum(eigen(SSCP.e, only.values = TRUE)$values >= sqrt(.Machine$double.eps))
+    if (rank < ncol(SSCP.e)){
+      stop("The error SSCP matrix is apparently of deficient rank = ", 
+           rank, " < ", ncol(SSCP.e))
+    }
   }
   
-  df.e <- fit$df.residual # df.e <- (n-1) - sum(Df)
+  ## Residual sum-of-squares and df
+  SSe <- sum(diag(SSCP.e))
+  df.e <- fit$df.residual # df.e <- (n-1) - sum(df)
   
-  ## Compute r.squared and adj.r.squared for the full model and per explanatory variable
-  sscp <- crossprod(fit$model[, 1])
-  R2 <- sum(diag(sscp-SSPE))/sum(diag(sscp))
-  # R2adj <- 1-( (1-R2)*(n-1) / df.e )
-  r2 <- lapply(SSP, function(x){sum(diag(x))/sum(diag(sscp))}) 
-  #r2adj <- lapply(r2, function(x){1-( (1-x)*(n-1) / df.e )})
+  ## Total sum-of-squares
+  SSt <- sum(diag(crossprod(fit$model[[1L]])))
   
-  return(list("SS" = SS, "SSe" = SSe, "Df" = Df, "df.e" = df.e, "f.tilde" = f.tilde, "r2" = r2))
+  ## Partial sums-of-squares
+  terms <- attr(fit$terms, "term.labels") # Model terms
+  n.terms <- length(terms)
+  
+  if(!is.null(subset)) {
+    if(all(subset %in% terms)) {
+      iterms <- which(terms %in% subset)
+    }else {
+      stop(sprintf("Unknown terms in subset: %s",
+                   paste0("'", subset[which(! subset %in% terms)], "'", 
+                          collapse = ", ")))
+    }
+  } else {
+    iterms <- 1:n.terms
+  }
+  asgn <- fit$assign
+  
+  df.i <- SSi <- numeric(n.terms) # Initialize empty
+  names(df.i) <- names(SSi) <- terms
+  
+  if (type == "I"){
+    
+    effects <- as.matrix(fit$effects)[seq_along(asgn), , drop = FALSE]
+    
+    for (i in iterms) {
+      subs <- which(asgn == i) 
+      SSi[i] <- sum(diag(crossprod(effects[subs, , drop = FALSE])))
+      df.i[i] <- length(subs)
+    }
+    
+  } else {
+    
+    sscp <- function(L, B, V){
+      LB <- L %*% B
+      crossprod(LB, solve(L %*% tcrossprod(V, L), LB))
+    }
+    
+    B <- fit$coefficients     # Coefficients
+    V <- solve(crossprod(X))  # V = (X'X)^{-1}
+    p <- nrow(B)
+    I.p <- diag(p)
+    
+    # In contrast to car::Anova, intercept 
+    # information is not returned for
+    # type III sums-of-squares
+    
+    if (type == "III"){
+      
+      for (i in iterms){
+        subs <- which(asgn == i) 
+        L <- I.p[subs, , drop = FALSE] # Hypothesis matrix
+        SSi[i] <- sum(diag(sscp(L, B, V)))
+        df.i[i] <- length(subs)
+      }
+      
+    } else {
+      
+      is.relative <- function(term1, term2, factors) {
+        all( !( factors[, term1] & ( !factors[, term2] ) ) )
+      }
+      
+      fac <- attr(fit$terms, "factors") 
+      for (i in iterms){
+        term <- terms[i]
+        subs.term <- which(asgn == i)
+        if(n.terms > 1) { # Obtain relatives
+          relatives <- (1:n.terms)[-i][sapply(terms[-i], 
+                                              function(term2) 
+                                                is.relative(term, term2, fac))]
+        } else { 
+          relatives <- NULL
+        }
+        subs.relatives <- NULL
+        for (relative in relatives){
+          subs.relatives <- c(subs.relatives, which(asgn == relative))
+        }
+        L1 <- I.p[subs.relatives, , drop = FALSE] # Hyp. matrix (relatives) 
+        if (length(subs.relatives) == 0) {
+          SSCP1 <- 0
+        } else {
+          SSCP1 <- sscp(L1, B, V)
+        }
+        L2 <- I.p[c(subs.relatives, subs.term), , drop = FALSE] # Hyp. matrix (relatives + term) 
+        SSCP2 <- sscp(L2, B, V)
+        SSi[i] <- sum(diag(SSCP2 - SSCP1))
+        df.i[i] <- length(subs.term)
+      }
+      
+    }
+  }
+  
+  ## subset
+  if(!is.null(subset)){
+    SSi <- SSi[iterms]
+    df.i <- df.i[iterms]
+  }
+  
+  ## pseudo F
+  f.tilde <- SSi/SSe*df.e/df.i
+  
+  ## r.squared
+  R2 <- (SSt - SSe)/SSt
+  # R2adj <- 1-( (1-R2)*(n-1) / df.e ) 
+  r2 <- SSi/SSt
+  # r2adj <- 1-( (1-r2)*(n-1) / df.e )
+  
+  return(list("SSi" = SSi, "SSe" = SSe, 
+              "df.i" = df.i, "df.e" = df.e, 
+              "f.tilde" = f.tilde, "r2" = r2))
 }
 
 ##' Compute asymptotic P-values
@@ -223,7 +324,10 @@ mlmtst <- function(fit, type = "II"){
 ##' @param eps precision limit.
 ##' @param tol lambda/sum(lambda) > tol.
 ##' 
+##' @author Diego Garrido-Martín
+##' 
 ##' @export
+##' 
 pv.ss <- function(ss, lambda, df.i, eps = 1e-14, tol = 1e-3){
   
   pv.farebrother <- function(ss, lambda, df.i, maxit = 100000, eps = 1e-14){
@@ -258,9 +362,11 @@ pv.ss <- function(ss, lambda, df.i, eps = 1e-14, tol = 1e-3){
 }
 
 ##' @author Diego Garrido-Martín
+##' 
 ##' @keywords internal
-##' @importFrom car Anova
+##'
 ##' @export
+##' 
 print.MLM <- function (x, digits = max(getOption("digits") - 2L, 3L), ...){
   
   ## Print Call and type of SS
@@ -289,8 +395,7 @@ print.MLM <- function (x, digits = max(getOption("digits") - 2L, 3L), ...){
   printCoefmat.mp(cmat, digits = digits, has.Pvalue = TRUE, 
                   P.values = TRUE, cs.ind = NULL, zap.ind = zap.i, 
                   tst.ind = tst.i, na.print = "", eps.Pvalue = x$precision + 1e-30, ...)
-
-  na <- attributes(x$fit$model)$na.action
+  na <- x$na.omit
   if(!is.null(na)){
     cat(sprintf("%s observation%s deleted due to missingness\n", 
                 length(na), ifelse(length(na) > 1, "s", "")))
@@ -305,7 +410,10 @@ print.MLM <- function (x, digits = max(getOption("digits") - 2L, 3L), ...){
 ##' 
 ##' @seealso \code{\link{printCoefmat}}.
 ##' 
+##' @author Diego Garrido-Martín
+##' 
 ##' @keywords internal
+##' 
 printCoefmat.mp <- function (x, digits = max(3L, getOption("digits") - 2L),
                              signif.stars = getOption("show.signif.stars"), 
                              signif.legend = signif.stars, 
@@ -420,6 +528,8 @@ printCoefmat.mp <- function (x, digits = max(3L, getOption("digits") - 2L),
 #'   \item{biomarker2}{levels of biomarker2}
 #'   ...
 #' }
+#' @author Diego Garrido-Martín
+#' 
 "biomarkers"
 
 #' Patients
@@ -435,4 +545,6 @@ printCoefmat.mp <- function (x, digits = max(3L, getOption("digits") - 2L),
 #'   \item{disease}{Disease status of the patient (ordered factor with levels
 #'   \code{healthy}, \code{"mild"}, \code{"severe"})}
 #' }
+#' @author Diego Garrido-Martín
+#' 
 "patients"

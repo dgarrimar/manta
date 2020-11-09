@@ -9,4 +9,4 @@ RUN apt-get update --fix-missing -qq && apt-get install -y -q \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ## Install R packages
-RUN R -e 'install.packages(c("car", "CompQuadForm", "testthat"), repos="http://cloud.r-project.org/")'
+RUN R -e 'install.packages(c("CompQuadForm", "testthat"), repos="http://cloud.r-project.org/")'

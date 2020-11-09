@@ -4,17 +4,24 @@
 \alias{mlmtst}
 \title{Compute test statistic}
 \usage{
-mlmtst(fit, type = "II")
+mlmtst(fit, X, type = "II", subset = NULL)
 }
 \arguments{
 \item{fit}{multivariate fit obtained by \code{\link{lm}}.}
 
+\item{X}{design matrix obtained by \code{\link{model.matrix}}.}
+
 \item{type}{type of sum of squares (\code{I}, \code{II} or \code{III}). Default is \code{II}.}
+
+\item{subset}{subset of explanatory variables for which summary statistics will be reported.}
 }
 \description{
 This function computes the degrees of freedom, sum of squares, partial R2 and
-pseudo F statistic for each explanatory variable from \code{fit}.
+pseudo F statistics for each explanatory variable from \code{fit}.
 }
 \details{
 Different types of sums of squares are available.
+}
+\author{
+Diego Garrido-Martín
 }
