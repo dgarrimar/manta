@@ -58,8 +58,12 @@ mlm <- function(formula, data, transform = "none", type = "II", contrasts = NULL
   mt <- attr(mf, "terms")
   response <- model.response(mf, "numeric")
   
-  if (!is.matrix(response)){ # Check
-    stop("Number of response variables should be >= 2.")
+  ## Checks
+  if (NCOL(response) < 2){
+    stop("The number of response variables should be >= 2.")
+  }
+  if (length(attr(mt, "term.labels")) < 1) {
+    stop("The model should contain at least one predictor (excluding the intercept).")
   }
   
   ## Transform and center responses, update model frame
