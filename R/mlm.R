@@ -54,7 +54,8 @@ mlm <- function(formula, data, transform = "none", type = "II", contrasts = NULL
     # na.action = "na.omit"
     # This means that the rows with at least one NA either
     # in Y or X (only considering variables used in the formula) 
-    # will be removed before centering 
+    # will be removed before centering
+  mt <- attr(mf, "terms")
   response <- model.response(mf, "numeric")
   
   if (!is.matrix(response)){ # Check
@@ -70,12 +71,12 @@ mlm <- function(formula, data, transform = "none", type = "II", contrasts = NULL
     Y <- log(response)
   } 
   Y <- scale(Y, center = TRUE, scale = FALSE)
-  mf[[1]] <- Y
+  mf[[1L]] <- Y
   
   ## Define contrasts
   if(is.null(contrasts)){
     contrasts <- list(unordered = "contr.sum", ordered = "contr.poly")
-    dc <- attr(terms(mf), "dataClasses")[-1]
+    dc <- attr(mt, "dataClasses")[-1]
     contr.list <- lapply(dc, FUN = function(k){
       # No contrast for quantitaive predictors
       # Sum contrasts for unordered categorical predictors
@@ -88,9 +89,21 @@ mlm <- function(formula, data, transform = "none", type = "II", contrasts = NULL
   } else {
     contr.list <- contrasts
   }
- 
+
+  ## Build model matrix
+  X <- model.matrix(mt, mf, contr.list)
+  
   ## Fit lm
-  fit <- lm(mf, contrasts = contr.list, ...)
+  fit <- lm.fit(X, Y, ...)
+  class(fit) <- c("mlm", "lm")
+  fit$na.action <- attr(mf, "na.action")
+  fit$contrasts <- attr(X, "contrasts")
+  fit$xlevels <- .getXlevels(mt, mf)
+  fit$call <- cl[c(1L, m)]
+  fit$call[[1L]] <- quote(lm)
+  if(length(contr.list)>0) fit$call$contrasts <- quote(contr.list)
+  fit$terms <- mt
+  fit$model <- mf
 
   ## Get residuals and sample size
   R <- fit$residuals
