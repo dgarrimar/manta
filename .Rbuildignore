@@ -6,3 +6,4 @@
 ^\.docker$
 ^\.Rhistory$
 ^\.git*$
+^\.travis.debug$
