@@ -1,13 +1,14 @@
+language: r
 os: linux
 dist: bionic
-
-language: ruby
-
-services:
- - docker
-
-install:
- - docker build -t dgarrimar/mlm:r4.0.3 ci/docker/
+  
+r:
+  - 3.5
+  - 3.6
+  - release
+  - devel
 
 script:
- - bash ci/run.sh
+  - R CMD build .
+  - R CMD check *tar.gz
+
