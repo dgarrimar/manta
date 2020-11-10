@@ -185,13 +185,11 @@ mlmtst <- function(fit, X, type = "II", subset = NULL){
   # Error sum-of-squares and cross-products (SSCP) matrix 
   SSCP.e <- crossprod(fit$residuals) 
   
-  # Check full rank for type I and III sums-of-squares
-  if(type != "II"){
-    rank <- sum(eigen(SSCP.e, only.values = TRUE)$values >= sqrt(.Machine$double.eps))
-    if (rank < ncol(SSCP.e)){
-      stop("The error SSCP matrix is apparently of deficient rank = ", 
-           rank, " < ", ncol(SSCP.e))
-    }
+  # Check full rank
+  rank <- sum(eigen(SSCP.e, only.values = TRUE)$values >= sqrt(.Machine$double.eps))
+  if (rank < ncol(SSCP.e)){
+    stop("The error SSCP matrix is apparently of deficient rank = ",
+         rank, " < ", ncol(SSCP.e))
   }
   
   ## Residual sum-of-squares and df
