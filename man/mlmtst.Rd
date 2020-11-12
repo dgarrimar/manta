@@ -4,7 +4,7 @@
 \alias{mlmtst}
 \title{Compute test statistic}
 \usage{
-mlmtst(fit, X, type = "II", subset = NULL)
+mlmtst(fit, X, type = "II", subset = NULL, tol = 0.001)
 }
 \arguments{
 \item{fit}{multivariate fit obtained by \code{\link{lm}}.}
@@ -14,6 +14,9 @@ mlmtst(fit, X, type = "II", subset = NULL)
 \item{type}{type of sum of squares (\code{I}, \code{II} or \code{III}). Default is \code{II}.}
 
 \item{subset}{subset of explanatory variables for which summary statistics will be reported.}
+
+\item{tol}{\code{e[e/sum(e) > tol]}, where \code{e} is the vector of eigenvalues
+of the residual covariance matrix.}
 }
 \description{
 This function computes the degrees of freedom, sum of squares, partial R2 and

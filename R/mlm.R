@@ -116,11 +116,7 @@ mlm <- function(formula, data, transform = "none", type = "II",
   lmfit$terms <- mt
   lmfit$model <- mf
 
-  ## Get residuals and sample size
-  R <- lmfit$residuals
-  n <- nrow(R)
-
-  ## Get dfs, sums of squares, f tildes and partial R2s
+  ## Get dfs, sums of squares, f tildes, partial R2s and eigenvalues 
   stats <- mlmtst(fit = lmfit, X = X, type = type, subset = subset)
   SSi <- stats$SSi
   SSe <- stats$SSe
@@ -128,9 +124,7 @@ mlm <- function(formula, data, transform = "none", type = "II",
   df.e <- stats$df.e
   f.tilde <- stats$f.tilde
   r2 <- stats$r2
-  
-  # Get eigenvalues from R
-  e <- eigen(cov(R)*(n-1)/df.e, symmetric = T, only.values = T)$values
+  e <- stats$e
   
   # Compute p.values
   pv.acc <- mapply(pv.ss, ss = SSi, df.i = df.i, MoreArgs = list(lambda = e))
@@ -175,22 +169,17 @@ mlm <- function(formula, data, transform = "none", type = "II",
 ##' @param X design matrix obtained by \code{\link{model.matrix}}.
 ##' @param type type of sum of squares (\code{I}, \code{II} or \code{III}). Default is \code{II}.
 ##' @param subset subset of explanatory variables for which summary statistics will be reported.
+##' @param tol \code{e[e/sum(e) > tol]}, where \code{e} is the vector of eigenvalues
+##' of the residual covariance matrix.
 ##' 
 ##' @author Diego Garrido-Martín
 ##' 
 ##' @export
 ##' 
-mlmtst <- function(fit, X, type = "II", subset = NULL){
+mlmtst <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
   
   # Error sum-of-squares and cross-products (SSCP) matrix 
   SSCP.e <- crossprod(fit$residuals) 
-  
-  # Check full rank
-  rank <- sum(eigen(SSCP.e, only.values = TRUE)$values >= sqrt(.Machine$double.eps))
-  if (rank < ncol(SSCP.e)){
-    stop("The error SSCP matrix is apparently of deficient rank = ",
-         rank, " < ", ncol(SSCP.e))
-  }
   
   ## Residual sum-of-squares and df
   SSe <- sum(diag(SSCP.e))
@@ -305,9 +294,14 @@ mlmtst <- function(fit, X, type = "II", subset = NULL){
   r2 <- SSi/SSt
   # r2adj <- 1-( (1-r2)*(n-1) / df.e )
   
+  # Get eigenvalues from cov(R)*(n-1)/df.e
+  e <- eigen(SSCP.e/df.e, symmetric = T, only.values = T)$values
+  e <- e[e/sum(e) > tol]
+  
   return(list("SSi" = SSi, "SSe" = SSe, 
               "df.i" = df.i, "df.e" = df.e, 
-              "f.tilde" = f.tilde, "r2" = r2))
+              "f.tilde" = f.tilde, "r2" = r2,
+              "e" = e))
 }
 
 ##' Compute asymptotic P-values
@@ -320,13 +314,12 @@ mlmtst <- function(fit, X, type = "II", subset = NULL){
 ##' @param lambda eigenvalues.
 ##' @param df.i degrees of freedom of the numerator of the test statistic.
 ##' @param eps precision limit.
-##' @param tol lambda/sum(lambda) > tol.
 ##' 
 ##' @author Diego Garrido-Martín
 ##' 
 ##' @export
 ##' 
-pv.ss <- function(ss, lambda, df.i, eps = 1e-14, tol = 1e-3){
+pv.ss <- function(ss, lambda, df.i, eps = 1e-14){
   
   pv.farebrother <- function(ss, lambda, df.i, maxit = 100000, eps = 1e-14){
     pv <- CompQuadForm::farebrother(ss, lambda = lambda, 
@@ -343,7 +336,6 @@ pv.ss <- function(ss, lambda, df.i, eps = 1e-14, tol = 1e-3){
   }
   
   eps0 <- eps
-  lambda <- lambda[lambda/sum(lambda) > tol]
   pv  <- pv.farebrother(ss = ss, lambda = lambda, df.i = df.i, eps = eps)
   while (length(pv) > 1) {
     eps <- eps * 10
