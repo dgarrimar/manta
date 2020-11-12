@@ -13,6 +13,4 @@ r:
 script:
   - R CMD build .
   - R CMD check mlm_*tar.gz
-  - R CMD INSTALL mlm_*tar.gz
-  - bash ci/run.sh 
   

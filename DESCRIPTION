@@ -9,7 +9,7 @@ Description: Performs non-parametric, multivariate regression with asymptotic p-
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
 Depends:
-    R (>= 3.0.0)
+    R (>= 3.3.2)
 Imports:
     CompQuadForm
 Suggests:
