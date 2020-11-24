@@ -142,12 +142,11 @@ extern "C" {
                     if (std::fabs(pans * sum) < eps2) {
                         if (std::fabs(sum1) < eps2) {
                             ifault[0] = 0;
-                            m = maxit[0] + 1;
                             break;
                         }
                     }
                 }
-                ifault[0] = 4;
+                if (m >= maxit[0]) ifault[0] = 4;
                 dnsty[0] = ao * dnsty[0] / (bbeta + bbeta);
                 prbty = ao * prbty;
                 if (prbty < 0.0 || prbty > 1.0) {
