@@ -42,6 +42,7 @@
 ##' @author Diego Garrido-Martín
 ##' 
 ##' @import stats
+##' 
 ##' @export
 ##' 
 mlm <- function(formula, data, transform = "none", type = "II", 
@@ -174,8 +175,6 @@ mlm <- function(formula, data, transform = "none", type = "II",
 ##' 
 ##' @author Diego Garrido-Martín
 ##' 
-##' @export
-##' 
 mlmtst <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
   
   # Error sum-of-squares and cross-products (SSCP) matrix 
@@ -306,49 +305,54 @@ mlmtst <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
 
 ##' Compute asymptotic P-values
 ##' 
-##' Description
-##' 
-##' Details
-##' 
 ##' @param ss numerator of the pseudo-F statistic.
 ##' @param lambda eigenvalues.
 ##' @param df.i degrees of freedom of the numerator of the test statistic.
 ##' @param eps precision limit.
+##' @param eps.updt factor by which precision limit is updated.
 ##' 
 ##' @author Diego Garrido-Martín
 ##' 
-##' @export
+##' @keywords internal
 ##' 
-pv.ss <- function(ss, lambda, df.i, eps = 1e-14){
+pv.ss <- function(ss, lambda, df.i, eps = 1e-14, eps.updt = 2){
   
-  pv.farebrother <- function(ss, lambda, df.i, maxit = 100000, eps = 1e-14){
-    pv <- CompQuadForm::farebrother(ss, lambda = lambda, 
-                                    h = rep(df.i, length(lambda)), 
-                                    maxit = maxit, eps = eps) # Skip warning
-    if(pv$ifault %in% c(0,4)){
-      return(pv$Qq)
-    } else if (pv$ifault %in% c(5,9)){
-      return(pv)
-    } else {
-      print(pv)
-      stop ("Unexpected fault indicator in Farebrother method.")
-    }
-  }
-  
-  eps0 <- eps
-  pv  <- pv.farebrother(ss = ss, lambda = lambda, df.i = df.i, eps = eps)
+  pv  <- AS204(q = ss, lambda = lambda, h = rep(df.i, length(lambda)), eps = eps)
   while (length(pv) > 1) {
-    eps <- eps * 10
-    if(eps > 1e-8){
-      print(pv)
-      stop("Precision > 1e-8.")
+    eps <- eps * eps.updt
+    if(eps > 1e-10){
+      stop(sprintf("Precision > 1e-10"))
     }
-    pv  <- pv.farebrother(ss = ss, lambda = lambda, df.i = df.i, eps = eps)
+    pv  <- AS204(q = ss, lambda = lambda, h = rep(df.i, length(lambda)), eps = eps)
   }
-  if (pv < eps0) {
-    pv <- eps0
+  if(pv < eps){
+    pv <- eps
   }
   return(c(pv, eps))
+}
+
+##' AS204 algorithm
+##' 
+##' @author Diego Garrido-Martín
+##' 
+##' @useDynLib mlm ruben
+##' 
+##' @keywords internal
+##'
+AS204 <- function (q, lambda, h = rep(1, length(lambda)), delta = rep(0, length(lambda)),
+                   maxit = 100000, eps = 1e-10, mode = 1) {
+  out <- .C("ruben", lambda = as.double(lambda), h = as.integer(h), 
+            delta = as.double(delta), r = as.integer(length(lambda)), q = as.double(q), 
+            mode = as.double(mode), maxit = as.integer(maxit), eps = as.double(eps), 
+            dnsty = as.double(0), ifault = as.integer(0), 
+            res = as.double(0), PACKAGE = "mlm")
+  if(out$ifault == 0){
+    return(1 - out$res)
+  } else if (out$ifault %in% c(4, 5, 9)){
+    return(list(ifault = out$ifault, Qq = 1 - out$res))
+  } else {
+    stop(sprintf("Fault indicator: %s", out$ifault))
+  }
 }
 
 ##' @author Diego Garrido-Martín

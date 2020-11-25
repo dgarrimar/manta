@@ -4,7 +4,7 @@
 \alias{pv.ss}
 \title{Compute asymptotic P-values}
 \usage{
-pv.ss(ss, lambda, df.i, eps = 1e-14)
+pv.ss(ss, lambda, df.i, eps = 1e-14, eps.updt = 2)
 }
 \arguments{
 \item{ss}{numerator of the pseudo-F statistic.}
@@ -14,13 +14,13 @@ pv.ss(ss, lambda, df.i, eps = 1e-14)
 \item{df.i}{degrees of freedom of the numerator of the test statistic.}
 
 \item{eps}{precision limit.}
+
+\item{eps.updt}{factor by which precision limit is updated.}
 }
 \description{
-Description
-}
-\details{
-Details
+Compute asymptotic P-values
 }
 \author{
 Diego Garrido-Martín
 }
+\keyword{internal}

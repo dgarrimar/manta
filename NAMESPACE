@@ -2,6 +2,5 @@
 
 S3method(print,MLM)
 export(mlm)
-export(mlmtst)
-export(pv.ss)
 import(stats)
+useDynLib(mlm,ruben)
