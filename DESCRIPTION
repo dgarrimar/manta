@@ -1,6 +1,6 @@
 Package: mlm
 Type: Package
-Title: Multivariate linear models
+Title: Multivariate Linear Models
 Version: 0.8.0
 Date: 2020-11-25
 Author: Diego Garrido-Mart<U+00ED>n, Ferran Reverter, Miquel Calvo, Roderic Guig<U+00F3>.
