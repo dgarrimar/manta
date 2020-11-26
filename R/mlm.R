@@ -78,10 +78,16 @@ mlm <- function(formula, data, transform = "none", type = "II",
   if(transform == "none"){
     Y <- response
   } else if (transform == "sqrt"){
+    if (any(response < 0)) {
+      stop("'sqrt' transformation requires all response values >= 0")
+    }
     Y <- sqrt(response)
   } else if (transform == "log"){
+    if (any(response <= 0)) {
+      stop("'log' transformation requires all response values > 0")
+    }
     Y <- log(response)
-  } 
+  }
   Y <- scale(Y, center = TRUE, scale = FALSE)
   mf[[1L]] <- Y
   
