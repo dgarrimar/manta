@@ -68,10 +68,10 @@ mlm <- function(formula, data, transform = "none", type = "II",
   
   ## Checks
   if (NCOL(response) < 2){
-    stop("The number of response variables should be >= 2.")
+    stop("The number of response variables should be >= 2")
   }
   if (length(attr(mt, "term.labels")) < 1) {
-    stop("The model should contain at least one predictor (excluding the intercept).")
+    stop("The model should contain at least one predictor (excluding the intercept)")
   }
   
   ## Transform and center responses, update model frame
@@ -96,7 +96,7 @@ mlm <- function(formula, data, transform = "none", type = "II",
     contrasts <- list(unordered = "contr.sum", ordered = "contr.poly")
     dc <- attr(mt, "dataClasses")[-1]
     contr.list <- lapply(dc, FUN = function(k){
-      # No contrast for quantitaive predictors
+      # No contrast for quantitative predictors
       # Sum contrasts for unordered categorical predictors
       # Polynomial contrasts for ordered categorical predictors
       contr.type <- switch(k, "factor" = contrasts$unordered,
@@ -119,37 +119,34 @@ mlm <- function(formula, data, transform = "none", type = "II",
   lmfit$xlevels <- .getXlevels(mt, mf)
   lmfit$call <- cl[c(1L, m)]
   lmfit$call[[1L]] <- quote(lm)
-  if(length(contr.list)>0) lmfit$call$contrasts <- quote(contr.list)
+  if(length(contr.list) > 0) lmfit$call$contrasts <- quote(contr.list)
   lmfit$terms <- mt
   lmfit$model <- mf
 
-  ## Get dfs, sums of squares, f tildes, partial R2s and eigenvalues 
+  ## Compute sums of squares, df's, pseudo F statistics, partial R2s and eigenvalues 
   stats <- mlmtst(fit = lmfit, X = X, type = type, subset = subset)
-  SSi <- stats$SSi
-  SSe <- stats$SSe
-  df.i <- stats$df.i
-  df.e <- stats$df.e
+  SS <- stats$SS
+  df <- stats$df
   f.tilde <- stats$f.tilde
   r2 <- stats$r2
   e <- stats$e
+
+  ## Compute P-values
+  l <- length(df) # SS[l], df[l] correspond to Residuals 
+  pv.acc <- mapply(pv.ss, ss = SS[-l], df = df[-l], MoreArgs = list(lambda = e))  
   
-  # Compute p.values
-  pv.acc <- mapply(pv.ss, ss = SSi, df.i = df.i, MoreArgs = list(lambda = e))
-  
-  # Output
-  ss <- c(SSi, Residuals = SSe)
-  df <- c(df.i, Residuals = df.e)
-  ms <- ss/df
-  stats.l <- list(df, ss, ms, f.tilde, r2, pv.acc[1, ])
+  ## ANOVA table
+  stats.l <- list(df, SS, SS/df, f.tilde, r2, pv.acc[1, ])
   cmat <- data.frame()
   for(i in seq(along = stats.l)) {
     for(j in names(stats.l[[i]])){
-      cmat[j,i] <- stats.l[[i]][j]
+      cmat[j, i] <- stats.l[[i]][j]
     }
   }
   cmat <- as.matrix(cmat)
   colnames(cmat) <- c("Df", "Sum Sq", "Mean Sq", "F value", "R2", "Pr(>F)")
 
+  ## Output
   out <- list("call" = cl,
               "aov.tab" = cmat,
               "type" = type,
@@ -161,7 +158,7 @@ mlm <- function(formula, data, transform = "none", type = "II",
   }
 
   ## Update class
-  class(out) <- c('MLM', class(out)) # Add help for class MLM
+  class(out) <- c('MLM', class(out))
   return(out)
 }
 
@@ -183,15 +180,15 @@ mlm <- function(formula, data, transform = "none", type = "II",
 ##' 
 mlmtst <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
   
-  # Error sum-of-squares and cross-products (SSCP) matrix 
+  ## Residual sum-of-squares and cross-products (SSCP) matrix
   SSCP.e <- crossprod(fit$residuals) 
   
   ## Residual sum-of-squares and df
-  SSe <- sum(diag(SSCP.e))
+  SS.e <- sum(diag(SSCP.e))
   df.e <- fit$df.residual # df.e <- (n-1) - sum(df)
   
   ## Total sum-of-squares
-  SSt <- sum(diag(crossprod(fit$model[[1L]])))
+  SS.t <- sum(diag(crossprod(fit$model[[1L]])))
   
   ## Partial sums-of-squares
   terms <- attr(fit$terms, "term.labels") # Model terms
@@ -210,8 +207,8 @@ mlmtst <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
   }
   asgn <- fit$assign
   
-  df.i <- SSi <- numeric(n.terms) # Initialize empty
-  names(df.i) <- names(SSi) <- terms
+  df <- SS <- numeric(n.terms) # Initialize empty
+  names(df) <- names(SS) <- terms
   
   if (type == "I"){
     
@@ -219,8 +216,8 @@ mlmtst <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
     
     for (i in iterms) {
       subs <- which(asgn == i) 
-      SSi[i] <- sum(diag(crossprod(effects[subs, , drop = FALSE])))
-      df.i[i] <- length(subs)
+      SS[i] <- sum(diag(crossprod(effects[subs, , drop = FALSE])))
+      df[i] <- length(subs)
     }
     
   } else {
@@ -244,8 +241,8 @@ mlmtst <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
       for (i in iterms){
         subs <- which(asgn == i) 
         L <- I.p[subs, , drop = FALSE] # Hypothesis matrix
-        SSi[i] <- sum(diag(sscp(L, B, V)))
-        df.i[i] <- length(subs)
+        SS[i] <- sum(diag(sscp(L, B, V)))
+        df[i] <- length(subs)
       }
       
     } else {
@@ -277,43 +274,41 @@ mlmtst <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
         }
         L2 <- I.p[c(subs.relatives, subs.term), , drop = FALSE] # Hyp. matrix (relatives + term) 
         SSCP2 <- sscp(L2, B, V)
-        SSi[i] <- sum(diag(SSCP2 - SSCP1))
-        df.i[i] <- length(subs.term)
+        SS[i] <- sum(diag(SSCP2 - SSCP1))
+        df[i] <- length(subs.term)
       }
-      
     }
   }
   
   ## subset
   if(!is.null(subset)){
-    SSi <- SSi[iterms]
-    df.i <- df.i[iterms]
+    SS <- SS[iterms]
+    df <- df[iterms]
   }
   
   ## pseudo F
-  f.tilde <- SSi/SSe*df.e/df.i
+  f.tilde <- SS/SS.e*df.e/df
   
   ## r.squared
-  R2 <- (SSt - SSe)/SSt
+  R2 <- (SS.t - SS.e)/SS.t
   # R2adj <- 1-( (1-R2)*(n-1) / df.e ) 
-  r2 <- SSi/SSt
+  r2 <- SS/SS.t
   # r2adj <- 1-( (1-r2)*(n-1) / df.e )
   
   # Get eigenvalues from cov(R)*(n-1)/df.e
   e <- eigen(SSCP.e/df.e, symmetric = T, only.values = T)$values
   e <- e[e/sum(e) > tol]
   
-  return(list("SSi" = SSi, "SSe" = SSe, 
-              "df.i" = df.i, "df.e" = df.e, 
-              "f.tilde" = f.tilde, "r2" = r2,
-              "e" = e))
+  return(list("SS" = c(SS, "Residuals" = SS.e),
+              "df" = c(df, "Residuals" = df.e),
+              "f.tilde" = f.tilde, "r2" = r2, "e" = e))
 }
 
 ##' Compute asymptotic P-values
 ##' 
 ##' @param ss numerator of the pseudo-F statistic.
 ##' @param lambda eigenvalues.
-##' @param df.i degrees of freedom of the numerator of the test statistic.
+##' @param df degrees of freedom of the numerator of the test statistic.
 ##' @param eps precision limit.
 ##' @param eps.updt factor by which precision limit is updated.
 ##' 
@@ -321,15 +316,15 @@ mlmtst <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
 ##' 
 ##' @keywords internal
 ##' 
-pv.ss <- function(ss, lambda, df.i, eps = 1e-14, eps.updt = 2){
+pv.ss <- function(ss, lambda, df, eps = 1e-14, eps.updt = 2){
   
-  pv  <- AS204(q = ss, lambda = lambda, h = rep(df.i, length(lambda)), eps = eps)
-  while (length(pv) > 1) {
+  pv  <- AS204(c = ss, lambda = lambda, mult = rep(df, length(lambda)), eps = eps)
+  while (is.null(pv)) {
     eps <- eps * eps.updt
     if(eps > 1e-10){
       stop(sprintf("Precision > 1e-10"))
     }
-    pv  <- AS204(q = ss, lambda = lambda, h = rep(df.i, length(lambda)), eps = eps)
+    pv  <- AS204(c = ss, lambda = lambda, mult = rep(df, length(lambda)), eps = eps)
   }
   if(pv < eps){
     pv <- eps
@@ -345,17 +340,19 @@ pv.ss <- function(ss, lambda, df.i, eps = 1e-14, eps.updt = 2){
 ##' 
 ##' @keywords internal
 ##'
-AS204 <- function (q, lambda, h = rep(1, length(lambda)), delta = rep(0, length(lambda)),
+AS204 <- function (c, lambda, mult = rep(1, length(lambda)), delta = rep(0, length(lambda)),
                    maxit = 100000, eps = 1e-10, mode = 1) {
-  out <- .C("ruben", lambda = as.double(lambda), h = as.integer(h), 
-            delta = as.double(delta), r = as.integer(length(lambda)), q = as.double(q), 
-            mode = as.double(mode), maxit = as.integer(maxit), eps = as.double(eps), 
-            dnsty = as.double(0), ifault = as.integer(0), 
+  
+  out <- .C("ruben", lambda = as.double(lambda), mult = as.integer(mult), 
+            delta = as.double(delta), n = as.integer(length(lambda)), 
+            c = as.double(c), mode = as.double(mode), maxit = as.integer(maxit), 
+            eps = as.double(eps), dnsty = as.double(0), ifault = as.integer(0), 
             res = as.double(0), PACKAGE = "mlm")
+  
   if(out$ifault == 0){
     return(1 - out$res)
   } else if (out$ifault %in% c(4, 5, 9)){
-    return(list(ifault = out$ifault, Qq = 1 - out$res))
+    return(NULL)
   } else {
     stop(sprintf("Fault indicator: %s", out$ifault))
   }
@@ -380,7 +377,7 @@ print.MLM <- function (x, digits = max(getOption("digits") - 2L, 3L), ...){
     cat(heading, sep = "\n")
   nc <- dim(cmat)[2L]
   if (is.null(cn <- colnames(cmat))) 
-    stop("'anova' object must have colnames")
+    stop("'aov.tab' object must have colnames")
   has.P <- grepl("^(P|Pr)\\(", cn[nc])
   zap.i <- 1L:(if (has.P) 
     nc - 1

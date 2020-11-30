@@ -5,9 +5,9 @@
 \title{AS204 algorithm}
 \usage{
 AS204(
-  q,
+  c,
   lambda,
-  h = rep(1, length(lambda)),
+  mult = rep(1, length(lambda)),
   delta = rep(0, length(lambda)),
   maxit = 1e+05,
   eps = 1e-10,

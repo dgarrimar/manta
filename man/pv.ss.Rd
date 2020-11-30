@@ -4,14 +4,14 @@
 \alias{pv.ss}
 \title{Compute asymptotic P-values}
 \usage{
-pv.ss(ss, lambda, df.i, eps = 1e-14, eps.updt = 2)
+pv.ss(ss, lambda, df, eps = 1e-14, eps.updt = 2)
 }
 \arguments{
 \item{ss}{numerator of the pseudo-F statistic.}
 
 \item{lambda}{eigenvalues.}
 
-\item{df.i}{degrees of freedom of the numerator of the test statistic.}
+\item{df}{degrees of freedom of the numerator of the test statistic.}
 
 \item{eps}{precision limit.}
 
