@@ -3,8 +3,8 @@ Type: Package
 Title: Multivariate Linear Models
 Version: 0.8.1
 Date: 2020-11-26
-Author: Diego Garrido-Mart<U+00ED>n, Ferran Reverter, Miquel Calvo, Roderic Guig<U+00F3>.
-Maintainer: Diego Garrido-Mart<U+00ED>n <diego.garrido@crg.eu>
+Author: Diego Garrido-Martín, Ferran Reverter, Miquel Calvo, Roderic Guigó.
+Maintainer: Diego Garrido-Martín <diego.garrido@crg.eu>
 Description: Performs non-parametric, multivariate regression with asymptotic p-values.
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
