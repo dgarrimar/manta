@@ -3,17 +3,18 @@
 \docType{data}
 \name{biomarkers}
 \alias{biomarkers}
-\title{Biomarkers}
+\title{Simulated Measurements of Five Disease Biomarkers}
 \format{
 A matrix with 100 rows and 5 numerical variables:
+
 \describe{
   \item{biomarker1}{levels of biomarker1}
   \item{biomarker2}{levels of biomarker2}
-  ...
+  \item{...}{}
 }
 }
 \usage{
-biomarkers
+data(biomarkers)
 }
 \description{
 A simulated dataset containing the levels of 5 biomarkers, 

@@ -1,18 +1,34 @@
-##' Compute test statistic
+##' Sums of Squares and Pseudo-F Statistics from a Multivariate Fit
 ##' 
-##' This function computes the degrees of freedom, sum of squares, partial R2 and
-##' pseudo F statistics for each explanatory variable from \code{fit}.
+##' Computes the sum of squares, degrees of freedom, pseudo-F statistics and
+##' partial R-squared for each predictor from a multivariate \code{fit}. 
+##' It also returns the eigenvalues of the residual covariance matrix.
 ##' 
-##' Different types of sums of squares are available.
+##' Different types of sums of squares (i.e. "\code{I}", "\code{II}" and 
+##' "\code{III}") are available.
 ##' 
 ##' @param fit multivariate fit obtained by \code{\link{lm}}.
-##' @param X design matrix obtained by \code{\link{model.matrix}}.
-##' @param type type of sum of squares (\code{I}, \code{II} or \code{III}). Default is \code{II}.
-##' @param subset subset of explanatory variables for which summary statistics will be reported.
+##' @param X design matrix obtained by \code{\link{model.matrix}}. 
+##' @param type type of sum of squares ("\code{I}", "\code{II}" or "\code{III}"). 
+##' Default is "\code{II}".
+##' @param subset subset of predictors for which summary statistics will be reported.
+##' Note that this is different from the "\code{subset}" argument in \code{\link{lm}}.
 ##' @param tol \code{e[e/sum(e) > tol]}, where \code{e} is the vector of eigenvalues
-##' of the residual covariance matrix.
+##' of the residual covariance matrix. Required to prevent long running times of 
+##' algorithm AS 204. Default is 0.001 to ensure minimal loss of accuracy.
+##' 
+##' @return A list containing:
+##' \item{SS}{sums of squares for all predictors (and residuals).}
+##' \item{df}{degrees of freedom for all predictors (and residuals).}
+##' \item{f.tilde}{pseudo-F statistics for all predictors.}
+##' \item{r2}{partial R-squared for all predictors.}
+##' \item{e}{eigenvalues of the residual covariance matrix.}
+##'
+##' @seealso \code{\link{AS204}}
 ##' 
 ##' @author Diego Garrido-Martín
+##'
+##' @keywords internal
 ##' 
 mlmtst <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
   
@@ -122,7 +138,7 @@ mlmtst <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
     df <- df[iterms]
   }
   
-  ## pseudo F
+  ## pseudo-F
   f.tilde <- SS/SS.e*df.e/df
   
   ## r.squared

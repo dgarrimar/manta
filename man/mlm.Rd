@@ -2,7 +2,7 @@
 % Please edit documentation in R/mlm.R
 \name{mlm}
 \alias{mlm}
-\title{Multivariate linear models}
+\title{Non-parametric, Asymptotic P-values for Multivariate Linear Models}
 \usage{
 mlm(
   formula,
@@ -15,12 +15,14 @@ mlm(
 )
 }
 \arguments{
-\item{formula}{object of class "\code{\link{formula}}": a symbolic 
-description of the model to be fitted.}
+\item{formula}{object of class "\code{\link{formula}}" (or one that can be 
+coerced to that class): a symbolic description of the model to be fitted.}
 
-\item{data}{an optional data frame containing the variables in the model. 
-If not found in data, the variables are taken from \code{environment(formula)}, 
-typically the environment from which \code{mlm} is called.}
+\item{data}{an optional data frame, list or environment (or object coercible 
+by \code{\link{as.data.frame}} to a data frame) containing the variables in 
+the model. If not found in data, the variables are taken from 
+\code{environment(formula)}, typically the environment from which \code{mlm} 
+is called.}
 
 \item{transform}{transformation of the response variables: "\code{none}", 
 "\code{sqrt}" or "\code{log}". Default is "\code{none}".}
@@ -31,38 +33,41 @@ Default is "\code{II}".}
 \item{contrasts}{an optional list. See \code{contrasts.arg} in 
 \code{\link{model.matrix.default}}. Default is "\code{\link{contr.sum}}" 
 for ordered factors and "\code{\link{contr.poly}}" for unordered factors. 
-Note that this is different from the default setting in 
-\code{\link{options}("contrasts")}.}
+Note that this is different from the default setting in \code{\link{options}("contrasts")}.}
 
-\item{subset}{subset of explanatory variables for which summary statistics will be reported.}
+\item{subset}{subset of predictors for which summary statistics will be 
+reported. Note that this is different from the "\code{subset}" argument in \code{\link{lm}}.}
 
-\item{fit}{logical. If \code{TRUE} the multivariate fit on transformed and centered responses
-is returned.}
+\item{fit}{logical. If \code{TRUE} the multivariate fit on transformed and 
+centered responses is returned.}
 }
 \value{
 \code{mlm} returns an object of \code{\link{class}} "MLM", a list containing:
 \item{call}{the matched call.}
-\item{aov.tab}{ANOVA table with Df, Sum Sq, Mean Sq, F values, partial R2 and P values.}
-\item{type}{the type of sum of squares (\code{I}, \code{II} or \code{III}).}
-\item{precision}{the precision in P value computation.}
+\item{aov.tab}{ANOVA table with Df, Sum Sq, Mean Sq, F values, 
+partial R-squared and P-values.}
+\item{type}{the type of sum of squares (\code{"I"}, \code{"II"} or \code{"III"}).}
+\item{precision}{the precision in P-value computation.}
 \item{transform}{the transformation applied to the response variables.}
-\item{na.omit}{incomplete cases removed (see \code{\link{na.omit}})}
-\item{fit}{if \code{fit = TRUE} the multivariate fit done on the transformed and centered 
-response variables is also returned.}
+\item{na.omit}{incomplete cases removed (see \code{\link{na.omit}}).}
+\item{fit}{if \code{fit = TRUE} the multivariate fit done on the transformed 
+and centered response variables is also returned.}
 }
 \description{
-Fits a multivariate linear model and computes test statistics and p-values
-for a set of predictors in a non-parametric manner.
+Fits a multivariate linear model and computes test statistics and asymptotic 
+P-values for predictors in a non-parametric manner.
 }
 \details{
-A \code{Y} matrix is obtained after transforming and centering the original 
-response variables. Then, the multivariate fit obtained by \code{\link{lm}} 
-can be used to compute sums of squares (\code{I}, \code{II} or \code{III}), 
-pseudo F statistics and asymptotic p-values for the explanatory 
-variables in a non-parametric manner.
+A \code{Y} matrix is obtained after transforming (optionally) and centering 
+the original response variables. Then, the multivariate fit obtained by 
+\code{\link{lm}} can be used to compute sums of squares (type-I, type-II or 
+type-III), pseudo-F statistics and asymptotic P-values for the terms specified
+by the \code{formula} in a non-parametric manner. The designations "type-II" 
+and "type-III" correspond exactly to those used in \code{\link[car]{Anova}}. 
+"type-I" refers to sequential sums of squares.
 }
 \seealso{
-\code{\link{lm}}
+\code{\link{lm}}, \code{\link[car]{Anova}}
 }
 \author{
 Diego Garrido-Martín

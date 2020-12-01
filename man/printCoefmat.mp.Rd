@@ -2,7 +2,7 @@
 % Please edit documentation in R/mlm.R
 \name{printCoefmat.mp}
 \alias{printCoefmat.mp}
-\title{Print Coefficient Matrices (multiple p-value precision limits)}
+\title{Print Coefficient Matrices (Multiple P-value Precision Limits)}
 \usage{
 printCoefmat.mp(
   x,
@@ -21,11 +21,11 @@ printCoefmat.mp(
 )
 }
 \description{
-Function \code{\link{printCoefmat}} modified to use multiple p-value 
-precision limits in higher-level print methods.
+Modification of \code{\link{printCoefmat}} to use multiple P-value 
+precision limits.
 }
 \seealso{
-\code{\link{printCoefmat}}.
+\code{\link{printCoefmat}}
 }
 \author{
 Diego Garrido-Martín

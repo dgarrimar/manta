@@ -1,19 +1,23 @@
-##' Multivariate linear models
+##' Non-parametric, Asymptotic P-values for Multivariate Linear Models
 ##' 
-##' Fits a multivariate linear model and computes test statistics and p-values
-##' for a set of predictors in a non-parametric manner. 
+##' Fits a multivariate linear model and computes test statistics and asymptotic 
+##' P-values for predictors in a non-parametric manner. 
 ##' 
-##' A \code{Y} matrix is obtained after transforming and centering the original 
-##' response variables. Then, the multivariate fit obtained by \code{\link{lm}} 
-##' can be used to compute sums of squares (\code{I}, \code{II} or \code{III}), 
-##' pseudo F statistics and asymptotic p-values for the explanatory 
-##' variables in a non-parametric manner.
+##' A \code{Y} matrix is obtained after transforming (optionally) and centering 
+##' the original response variables. Then, the multivariate fit obtained by 
+##' \code{\link{lm}} can be used to compute sums of squares (type-I, type-II or 
+##' type-III), pseudo-F statistics and asymptotic P-values for the terms specified
+##' by the \code{formula} in a non-parametric manner. The designations "type-II" 
+##' and "type-III" correspond exactly to those used in \code{\link[car]{Anova}}. 
+##' "type-I" refers to sequential sums of squares.
 ##' 
-##' @param formula object of class "\code{\link{formula}}": a symbolic 
-##' description of the model to be fitted. 
-##' @param data an optional data frame containing the variables in the model. 
-##' If not found in data, the variables are taken from \code{environment(formula)}, 
-##' typically the environment from which \code{mlm} is called.
+##' @param formula object of class "\code{\link{formula}}" (or one that can be 
+##' coerced to that class): a symbolic description of the model to be fitted. 
+##' @param data an optional data frame, list or environment (or object coercible 
+##' by \code{\link{as.data.frame}} to a data frame) containing the variables in 
+##' the model. If not found in data, the variables are taken from 
+##' \code{environment(formula)}, typically the environment from which \code{mlm} 
+##' is called.
 ##' @param transform transformation of the response variables: "\code{none}", 
 ##' "\code{sqrt}" or "\code{log}". Default is "\code{none}".
 ##' @param type type of sum of squares: "\code{I}", "\code{II}" or "\code{III}". 
@@ -21,23 +25,24 @@
 ##' @param contrasts an optional list. See \code{contrasts.arg} in 
 ##' \code{\link{model.matrix.default}}. Default is "\code{\link{contr.sum}}" 
 ##' for ordered factors and "\code{\link{contr.poly}}" for unordered factors. 
-##' Note that this is different from the default setting in 
-##' \code{\link{options}("contrasts")}.
-##' @param subset subset of explanatory variables for which summary statistics will be reported.
-##' @param fit logical. If \code{TRUE} the multivariate fit on transformed and centered responses
-##' is returned.
+##' Note that this is different from the default setting in \code{\link{options}("contrasts")}.
+##' @param subset subset of predictors for which summary statistics will be 
+##' reported. Note that this is different from the "\code{subset}" argument in \code{\link{lm}}.
+##' @param fit logical. If \code{TRUE} the multivariate fit on transformed and 
+##' centered responses is returned.
 ##' 
 ##' @return \code{mlm} returns an object of \code{\link{class}} "MLM", a list containing:
 ##' \item{call}{the matched call.}
-##' \item{aov.tab}{ANOVA table with Df, Sum Sq, Mean Sq, F values, partial R2 and P values.}
-##' \item{type}{the type of sum of squares (\code{I}, \code{II} or \code{III}).}
-##' \item{precision}{the precision in P value computation.}
+##' \item{aov.tab}{ANOVA table with Df, Sum Sq, Mean Sq, F values, 
+##' partial R-squared and P-values.}
+##' \item{type}{the type of sum of squares (\code{"I"}, \code{"II"} or \code{"III"}).}
+##' \item{precision}{the precision in P-value computation.}
 ##' \item{transform}{the transformation applied to the response variables.}
-##' \item{na.omit}{incomplete cases removed (see \code{\link{na.omit}})}
-##' \item{fit}{if \code{fit = TRUE} the multivariate fit done on the transformed and centered 
-##' response variables is also returned.}
+##' \item{na.omit}{incomplete cases removed (see \code{\link{na.omit}}).}
+##' \item{fit}{if \code{fit = TRUE} the multivariate fit done on the transformed 
+##' and centered response variables is also returned.}
 ##' 
-##' @seealso \code{\link{lm}}
+##' @seealso \code{\link{lm}}, \code{\link[car]{Anova}}
 ##' 
 ##' @author Diego Garrido-Martín
 ##' 
@@ -123,7 +128,7 @@ mlm <- function(formula, data, transform = "none", type = "II",
   lmfit$terms <- mt
   lmfit$model <- mf
 
-  ## Compute sums of squares, df's, pseudo F statistics, partial R2s and eigenvalues 
+  ## Compute sums of squares, df's, pseudo-F statistics, partial R2s and eigenvalues 
   stats <- mlmtst(fit = lmfit, X = X, type = type, subset = subset)
   SS <- stats$SS
   df <- stats$df
@@ -133,7 +138,7 @@ mlm <- function(formula, data, transform = "none", type = "II",
 
   ## Compute P-values
   l <- length(df) # SS[l], df[l] correspond to Residuals 
-  pv.acc <- mapply(pv.ss, ss = SS[-l], df = df[-l], MoreArgs = list(lambda = e))  
+  pv.acc <- mapply(p.asympt, ss = SS[-l], df = df[-l], MoreArgs = list(lambda = e))  
   
   ## ANOVA table
   stats.l <- list(df, SS, SS/df, f.tilde, r2, pv.acc[1, ])
@@ -204,17 +209,17 @@ print.MLM <- function (x, digits = max(getOption("digits") - 2L, 3L), ...){
   invisible(x)
 }
 
-##' Print Coefficient Matrices (multiple p-value precision limits)
+##' Print Coefficient Matrices (Multiple P-value Precision Limits)
 ##' 
-##' Function \code{\link{printCoefmat}} modified to use multiple p-value 
-##' precision limits in higher-level print methods.
+##' Modification of \code{\link{printCoefmat}} to use multiple P-value 
+##' precision limits.
 ##' 
-##' @seealso \code{\link{printCoefmat}}.
+##' @seealso \code{\link{printCoefmat}}
 ##' 
 ##' @author Diego Garrido-Martín
 ##' 
 ##' @keywords internal
-##' 
+##'  
 printCoefmat.mp <- function (x, digits = max(3L, getOption("digits") - 2L),
                              signif.stars = getOption("show.signif.stars"), 
                              signif.legend = signif.stars, 
