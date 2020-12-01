@@ -105,7 +105,7 @@ p.asympt <- function(ss, df, lambda, eps = 1e-14, eps.updt = 2, eps.stop = 1e-10
 ##' @keywords internal
 ##' 
 AS204 <- function (c, lambda, mult = rep(1, length(lambda)), delta = rep(0, length(lambda)),
-                   maxit = 100000, eps = 1e-10, mode = 1) {
+                   maxit = 100000, eps = 1e-14, mode = 1) {
   
   out <- .C("ruben", lambda = as.double(lambda), mult = as.integer(mult), 
             delta = as.double(delta), n = as.integer(length(lambda)), 
@@ -118,6 +118,6 @@ AS204 <- function (c, lambda, mult = rep(1, length(lambda)), delta = rep(0, leng
   } else if (out$ifault %in% c(4, 5, 9)){
     return(NULL)
   } else {
-    stop(sprintf("Fault indicator: %s", out$ifault))
+    stop(sprintf("Algorithm AS 204 failed with fault indicator: %s", out$ifault))
   }
 }
