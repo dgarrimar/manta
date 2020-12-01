@@ -4,7 +4,7 @@
 \alias{p.asympt}
 \title{Asymptotic P-values}
 \usage{
-p.asympt(ss, df, lambda, eps = 1e-14, eps.updt = 2)
+p.asympt(ss, df, lambda, eps = 1e-14, eps.updt = 2, eps.stop = 1e-10)
 }
 \arguments{
 \item{ss}{numerator of the pseudo-F statistic.}
@@ -17,6 +17,9 @@ p.asympt(ss, df, lambda, eps = 1e-14, eps.updt = 2)
 
 \item{eps.updt}{factor by which \code{eps} is updated to retry execution of
 algorithm AS 204 when it fails with fault indicator 4, 5 or 9.}
+
+\item{eps.stop}{if \code{eps > eps.stop}, execution of algorithm AS 204 is 
+not retried and the function raises an error. Default is \code{1e-10}.}
 }
 \value{
 A vector containing the P-value and the level of accuracy.

@@ -9,6 +9,8 @@
 ##' @param eps the desired level of accuracy.
 ##' @param eps.updt factor by which \code{eps} is updated to retry execution of
 ##' algorithm AS 204 when it fails with fault indicator 4, 5 or 9.
+##' @param eps.stop if \code{eps > eps.stop}, execution of algorithm AS 204 is 
+##' not retried and the function raises an error. Default is \code{1e-10}.
 ##' 
 ##' @return A vector containing the P-value and the level of accuracy. 
 ##' 
@@ -18,13 +20,13 @@
 ##' 
 ##' @keywords internal
 ##' 
-p.asympt <- function(ss, df, lambda, eps = 1e-14, eps.updt = 2){
+p.asympt <- function(ss, df, lambda, eps = 1e-14, eps.updt = 2, eps.stop = 1e-10){
   
   pv  <- AS204(c = ss, lambda = lambda, mult = rep(df, length(lambda)), eps = eps)
   while (is.null(pv)) {
     eps <- eps * eps.updt
-    if(eps > 1e-10){
-      stop(sprintf("Precision > 1e-10"))
+    if(eps > eps.stop){
+      stop(sprintf("Precision of asymptotic P-value > %.2e", eps.stop))
     }
     pv  <- AS204(c = ss, lambda = lambda, mult = rep(df, length(lambda)), eps = eps)
   }
