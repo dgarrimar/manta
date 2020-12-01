@@ -7,3 +7,4 @@
 ^\.Rhistory$
 ^\.git*$
 ^\.travis.debug$
+^codecov\.yml$

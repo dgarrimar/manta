@@ -14,6 +14,6 @@ void R_init_mlm(DllInfo *dll) {
   R_useDynamicSymbols(dll, FALSE);
 }
 
-void R_unload_mlm(DllInfo *info) {
+void R_unload_mlm(DllInfo *info) { // #nocov start
     /* Release resources. */
-}
+}                                  // #nocov end
