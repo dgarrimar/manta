@@ -10,7 +10,7 @@ AS204(
   mult = rep(1, length(lambda)),
   delta = rep(0, length(lambda)),
   maxit = 1e+05,
-  eps = 1e-10,
+  eps = 1e-14,
   mode = 1
 )
 }
