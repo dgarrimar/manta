@@ -2,16 +2,20 @@ language: r
 os: linux
 dist: bionic
   
-r:
-  - 3.3
-  - 3.4
-  - 3.5
-  - oldrel
-  - release
-  - devel
-
 r_packages:
   - covr
 
+jobs:
+  include:
+  - r: 3.3
+    warnings_are_errors: false
+  - r: 3.4
+    warnings_are_errors: false
+  - r: 3.5
+    warnings_are_errors: false
+  - r: oldrel
+  - r: release
+  - r: devel
+
 after_success:
-  - Rscript -e 'covr::codecov()'  
+  - test $TRAVIS_R_VERSION_STRING = 'release' && Rscript -e 'covr::codecov()'  
