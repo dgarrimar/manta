@@ -173,7 +173,7 @@ mlm <- function(formula, data, transform = "none", type = "II",
 ##'
 ##' @export
 ##' 
-print.MLM <- function (x, digits = max(getOption("digits") - 2L, 3L), ...){
+print.MLM <- function (x, digits = max(getOption("digits") - 2L, 3L), ...){ # #nocov start
   
   ## Print Call and type of SS
   cat("\nCall:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"), 
@@ -207,7 +207,7 @@ print.MLM <- function (x, digits = max(getOption("digits") - 2L, 3L), ...){
                 length(na), ifelse(length(na) > 1, "s", "")))
   }
   invisible(x)
-}
+} # #nocov end
 
 ##' Print Coefficient Matrices (Multiple P-value Precision Limits)
 ##' 
@@ -228,7 +228,7 @@ printCoefmat.mp <- function (x, digits = max(3L, getOption("digits") - 2L),
                              P.values = NULL, has.Pvalue = nc >= 4 && 
                                substr(colnames(x)[nc], 1, 3) == "Pr(", 
                              eps.Pvalue = .Machine$double.eps, na.print = "NA", 
-                             ...) {
+                             ...) { # #nocov start
   if (is.null(d <- dim(x)) || length(d) != 2L) 
     stop("'x' must be coefficient matrix/data frame")
   nc <- d[2L]
@@ -320,4 +320,4 @@ printCoefmat.mp <- function (x, digits = max(3L, getOption("digits") - 2L),
           4 + max(nchar(sleg, "bytes") - nchar(sleg)))
   }
   invisible(x)
-}
+} # #nocov end

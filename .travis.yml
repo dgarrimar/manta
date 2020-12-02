@@ -19,5 +19,4 @@ jobs:
   - r: devel
 
 after_success: 
-  - test $TRAVIS_R_VERSION_STRING = 'release'
-  - Rscript -e 'covr::codecov(function_exclusions = "print.*")'  
+  - test $TRAVIS_R_VERSION_STRING = 'release' && Rscript -e 'covr::codecov()'  
