@@ -8,3 +8,4 @@
 ^\.git*$
 ^\.travis.debug$
 ^codecov\.yml$
+^\.github$
