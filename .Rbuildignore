@@ -1,11 +1,8 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^data-raw$
-^\.travis\.yml$
-^ci$
 ^\.docker$
 ^\.Rhistory$
 ^\.git*$
-^\.travis.debug$
 ^codecov\.yml$
 ^\.github$

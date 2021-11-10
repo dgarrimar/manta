@@ -3,10 +3,6 @@
 .RData
 .Ruserdata
 .docker
-.travis.debug
-ci/res.rda
-ci/R/**
 data-raw
 src/*o
 TODO
-
