@@ -100,7 +100,7 @@ p.asympt <- function(ss, df, lambda, eps = 1e-14, eps.updt = 2, eps.stop = 1e-10
 ##' 
 ##' @author Diego Garrido-Martín
 ##' 
-##' @useDynLib mlm ruben
+##' @useDynLib manta ruben
 ##' 
 ##' @keywords internal
 ##' 
@@ -111,7 +111,7 @@ AS204 <- function (c, lambda, mult = rep(1, length(lambda)), delta = rep(0, leng
             delta = as.double(delta), n = as.integer(length(lambda)), 
             c = as.double(c), mode = as.double(mode), maxit = as.integer(maxit), 
             eps = as.double(eps), dnsty = as.double(0), ifault = as.integer(0), 
-            res = as.double(0), PACKAGE = "mlm")
+            res = as.double(0), PACKAGE = "manta")
   
   if(out$ifault == 0){
     return(1 - out$res)

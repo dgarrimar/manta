@@ -30,7 +30,7 @@
 ##'
 ##' @keywords internal
 ##' 
-mlmtst <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
+manta.ss <- function(fit, X, type = "II", subset = NULL, tol = 1e-3){
   
   ## Residual sum-of-squares and cross-products (SSCP) matrix
   SSCP.e <- crossprod(fit$residuals) 

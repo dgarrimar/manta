@@ -9,11 +9,11 @@ static const R_CMethodDef CEntries[] = {
   {NULL, NULL, 0}
 };
 
-void R_init_mlm(DllInfo *dll) {
+void R_init_manta(DllInfo *dll) {
   R_registerRoutines(dll, CEntries, NULL, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
 }
 
-void R_unload_mlm(DllInfo *info) { // #nocov start
+void R_unload_manta(DllInfo *info) { // #nocov start
     /* Release resources. */
-}                                  // #nocov end
+}                                    // #nocov end

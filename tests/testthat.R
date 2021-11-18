@@ -1,4 +1,4 @@
 library(testthat)
-library(mlm)
+library(manta)
 
-test_check("mlm")
+test_check("manta")

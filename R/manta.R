@@ -16,7 +16,7 @@
 ##' @param data an optional data frame, list or environment (or object coercible 
 ##' by \code{\link{as.data.frame}} to a data frame) containing the variables in 
 ##' the model. If not found in data, the variables are taken from 
-##' \code{environment(formula)}, typically the environment from which \code{mlm} 
+##' \code{environment(formula)}, typically the environment from which \code{manta} 
 ##' is called.
 ##' @param transform transformation of the response variables: "\code{none}", 
 ##' "\code{sqrt}" or "\code{log}". Default is "\code{none}".
@@ -31,7 +31,7 @@
 ##' @param fit logical. If \code{TRUE} the multivariate fit on transformed and 
 ##' centered responses is returned.
 ##' 
-##' @return \code{mlm} returns an object of \code{\link{class}} "MLM", a list containing:
+##' @return \code{manta} returns an object of \code{\link{class}} "manta", a list containing:
 ##' \item{call}{the matched call.}
 ##' \item{aov.tab}{ANOVA table with Df, Sum Sq, Mean Sq, F values, 
 ##' partial R-squared and P-values.}
@@ -50,7 +50,7 @@
 ##' 
 ##' @export
 ##' 
-mlm <- function(formula, data, transform = "none", type = "II", 
+manta <- function(formula, data, transform = "none", type = "II", 
                 contrasts = NULL, subset = NULL, fit = FALSE){
   
   ## Checks
@@ -129,7 +129,7 @@ mlm <- function(formula, data, transform = "none", type = "II",
   lmfit$model <- mf
 
   ## Compute sums of squares, df's, pseudo-F statistics, partial R2s and eigenvalues 
-  stats <- mlmtst(fit = lmfit, X = X, type = type, subset = subset)
+  stats <- manta.ss(fit = lmfit, X = X, type = type, subset = subset)
   SS <- stats$SS
   df <- stats$df
   f.tilde <- stats$f.tilde
@@ -163,7 +163,7 @@ mlm <- function(formula, data, transform = "none", type = "II",
   }
 
   ## Update class
-  class(out) <- c('MLM', class(out))
+  class(out) <- c('manta', class(out))
   return(out)
 }
 
@@ -173,7 +173,7 @@ mlm <- function(formula, data, transform = "none", type = "II",
 ##'
 ##' @export
 ##' 
-print.MLM <- function (x, digits = max(getOption("digits") - 2L, 3L), ...){ # #nocov start
+print.manta <- function (x, digits = max(getOption("digits") - 2L, 3L), ...){ # #nocov start
   
   ## Print Call and type of SS
   cat("\nCall:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"), 

@@ -1,6 +1,6 @@
-Package: mlm
+Package: manta
 Type: Package
-Title: Multivariate Linear Models
+Title: Multivariate Asymptotic Non-parametric Test of Association
 Version: 0.8.3
 Date: 2020-12-02
 Author: Diego Garrido-Martín, Ferran Reverter, Miquel Calvo, Roderic Guigó.
@@ -13,6 +13,6 @@ Depends:
 Suggests:
     testthat
 LazyData: true
-URL: http://github.com/dgarrimar/mlm
-BugReports: http://github.com/dgarrimar/mlm/issues
-RoxygenNote: 7.1.1
+URL: http://github.com/dgarrimar/manta
+BugReports: http://github.com/dgarrimar/manta/issues
+RoxygenNote: 7.1.2

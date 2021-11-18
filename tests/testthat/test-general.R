@@ -1,12 +1,12 @@
 context("I/O format")
 
 test_that("Response of class 'data.frame' raises an error", {
-  expect_error(mlm(as.data.frame(biomarkers) ~ ., data = patients), 
+  expect_error(manta(as.data.frame(biomarkers) ~ ., data = patients), 
                "invalid type \\(list\\)")
 })
 
 test_that("A single response raises an error", {
-  expect_error(mlm(biomarkers[,1] ~ ., data = patients), 
+  expect_error(manta(biomarkers[,1] ~ ., data = patients), 
                "number of response variables")
 })
 
@@ -14,50 +14,50 @@ context("Models")
 
 test_that("Null and intercept-only models raise an error", {
   e <- "at least one predictor"
-  expect_error(mlm(biomarkers ~ -1, data = patients), e)
-  expect_error(mlm(biomarkers ~ 0, data = patients), e)
-  expect_error(mlm(biomarkers ~ 1, data = patients), e)
+  expect_error(manta(biomarkers ~ -1, data = patients), e)
+  expect_error(manta(biomarkers ~ 0, data = patients), e)
+  expect_error(manta(biomarkers ~ 1, data = patients), e)
 })
 
-test_that("na.action in mlm is 'na.omit'", {
+test_that("na.action in manta is 'na.omit'", {
   na.default <- options("na.action")$na.action
   options(na.action = "na.fail")
-  expect_error(mlm(biomarkers ~ ., data = patients), NA)
+  expect_error(manta(biomarkers ~ ., data = patients), NA)
   options(na.action = na.default)
 })
 
 context("Other arguments")
 
 test_that("Transformation generating NaNs raises an error", {
-  expect_error(mlm(biomarkers ~ ., data = patients, transform = "log"),
+  expect_error(manta(biomarkers ~ ., data = patients, transform = "log"),
                "transformation requires")
-  expect_error(mlm(biomarkers ~ ., data = patients, transform = "sqrt"),
+  expect_error(manta(biomarkers ~ ., data = patients, transform = "sqrt"),
                "transformation requires")
 })
 
 test_that("Summary stats are identical for subsets of terms", {
-  res.full <- mlm(biomarkers ~ .^2, data = patients)
+  res.full <- manta(biomarkers ~ .^2, data = patients)
   subset <- c("age", "gender:status")
-  res.subset <- mlm(biomarkers ~ .^2, data = patients, subset = subset)
+  res.subset <- manta(biomarkers ~ .^2, data = patients, subset = subset)
   expect_identical(res.full$aov.tab[subset, ], res.subset$aov.tab[subset, ])
 })
 
 test_that("Subset with unknown terms raises an error", {
   subset <- c("age", "UNKOWN")
-  expect_error(mlm(biomarkers ~ .^2, data = patients, subset = subset), 
+  expect_error(manta(biomarkers ~ .^2, data = patients, subset = subset), 
                "Unknown terms in subset")
 })
 
 context("Results on example dataset")
 
 test_that("Current output matches expected results", {
-  res <- mlm(biomarkers ~ .^2, data = patients, fit = TRUE)
+  res <- manta(biomarkers ~ .^2, data = patients, fit = TRUE)
   expect_equal_to_reference(res, "example_ref.rds")
   
-  res <- mlm(biomarkers ~ .^2, data = patients, type = "I", fit = TRUE)
+  res <- manta(biomarkers ~ .^2, data = patients, type = "I", fit = TRUE)
   expect_equal_to_reference(res, "example_ref_I.rds")
   
-  res <- mlm(biomarkers ~ .^2, data = patients, type = "III", fit = TRUE)
+  res <- manta(biomarkers ~ .^2, data = patients, type = "III", fit = TRUE)
   expect_equal_to_reference(res, "example_ref_III.rds")
 })
 
