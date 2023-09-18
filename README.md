@@ -1,7 +1,7 @@
 # MANTA <img src='man/figures/logo.png' align="right" height="139"/>
 
 [![R-CMD-check](https://github.com/dgarrimar/manta/actions/workflows/check-full.yaml/badge.svg)](https://github.com/dgarrimar/manta/actions/workflows/check-full.yaml)
-[![Codecov test coverage](https://app.codecov.io/gh/dgarrimar/manta/branch/master/graph/badge.svg)](https://app.codecov.io/gh/dgarrimar/manta)
+[![Codecov test coverage](https://codecov.io/gh/dgarrimar/manta/branch/master/graph/badge.svg)](https://app.codecov.io/gh/dgarrimar/manta)
 
 The Multivariate Asymptotic Non-parametric Test of Association (MANTA) enables non-parametric, asymptotic P-value computation for multivariate linear models. 
 
