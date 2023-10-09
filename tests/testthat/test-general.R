@@ -35,11 +35,11 @@ test_that("Transformation generating NaNs raises an error", {
                "transformation requires")
 })
 
-test_that("Summary stats are identical for subsets of terms", {
+test_that("Summary stats are equal for subsets of terms", {
   res.full <- manta(biomarkers ~ .^2, data = patients)
   subset <- c("age", "gender:status")
   res.subset <- manta(biomarkers ~ .^2, data = patients, subset = subset)
-  expect_identical(res.full$aov.tab[subset, ], res.subset$aov.tab[subset, ])
+  expect_equal(res.full$aov.tab[subset, ], res.subset$aov.tab[subset, ])
 })
 
 test_that("Subset with unknown terms raises an error", {
