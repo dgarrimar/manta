@@ -39,4 +39,4 @@ manta(biomarkers ~ ., data = patients)
 
 If you find MANTA useful in your research please cite the related publication:
 
-Garrido-Martín, D., Calvo, M., Reverter, F., Guigó, R. A fast non-parametric test of association for multiple traits. *bioRxiv* (2022). [https://doi.org/10.1101/2022.06.06.493041](https://doi.org/10.1101/2022.06.06.493041)
+Garrido-Martín, D., Calvo, M., Reverter, F., Guigó, R. A fast non-parametric test of association for multiple traits. *Genome Biol* **24**, 230 (2023). [https://doi.org/10.1186/s13059-023-03076-8](https://doi.org/10.1186/s13059-023-03076-8)
